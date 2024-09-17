@@ -112,11 +112,6 @@ public class Player : Entity
         {
             UpdateEnemyInfo();
         }
-
-        if (Input.GetKeyDown(KeyCode.G) && isLocalPlayer)
-        {
-            gameManager.StartGame();
-        }
     }
 
     public void UpdateEnemyInfo()
@@ -138,6 +133,7 @@ public class Player : Entity
                     enemyInfo = currentPlayer;
                     hasEnemy = true;
                     enemyInfo.data.casterType = Target.OPPONENT;
+                    gameManager.StartGame();
                     //Debug.LogError("Player " + username + " Enemy " + enemy.username + " / " + enemyInfo.username); // Used for Debugging
                 }
             }

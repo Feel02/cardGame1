@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using Mirror;
+using Unity.VisualScripting;
+using Unity.VisualScripting.Antlr3.Runtime.Tree;
 
 public class GameManager : NetworkBehaviour
 {
@@ -100,10 +102,15 @@ public class GameManager : NetworkBehaviour
 
     public void StartGame()
     {
-        endTurnButton.SetActive(true);
-        Player player = Player.localPlayer;
-        player.mana++;
-        player.currentMax++;
-        isOurTurn = true;
+        if(isServer)
+        {
+            endTurnButton.SetActive(true);
+            Player player = Player.localPlayer;
+            player.mana = 1;
+            player.currentMax = 1;
+            player.enemyInfo.data.mana = 1;
+            player.enemyInfo.data.currentMax = 1;
+            isOurTurn = true;
+        }
     }
 }
