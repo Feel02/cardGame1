@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Mirror;
+using Unity.VisualScripting;
 
 public class PlayerHand : MonoBehaviour
 {
@@ -11,14 +12,19 @@ public class PlayerHand : MonoBehaviour
     private PlayerInfo enemyInfo;
     private int cardCount = 0; // Amount of cards in hand
 
+    private bool isStarted = false;
+
     void Update()
     {
         player = Player.localPlayer;
-        if (player && player.hasEnemy) enemyInfo = player.enemyInfo;
-
-        if (playerType == PlayerType.PLAYER && Input.GetKeyDown(KeyCode.C))
+        if (player && player.hasEnemy)
         {
-            player.deck.DrawCard(7);
+            enemyInfo = player.enemyInfo;
+            if (!isStarted && IsPlayerHand())
+            {
+                isStarted = true;
+                player.deck.DrawCard(7);
+            }
         }
 
         if (IsEnemyHand())
