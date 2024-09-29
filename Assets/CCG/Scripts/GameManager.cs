@@ -121,8 +121,8 @@ public class GameManager : NetworkBehaviour
                 player.currentMax = 1;
                 player.enemyInfo.data.mana = 1;
                 player.enemyInfo.data.currentMax = 1;
-                players[0].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
-                players[0].player.GetComponent<GameManager>().isOurTurn = true;
+                players[1].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
+                players[1].player.GetComponent<GameManager>().isOurTurn = true;
             }
         } 
         else{                               //the player is the host but both users use these codes
