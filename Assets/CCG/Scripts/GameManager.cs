@@ -2,6 +2,7 @@
 using Mirror;
 using Unity.VisualScripting;
 using Unity.VisualScripting.Antlr3.Runtime.Tree;
+using UnityEngine.Analytics;
 
 public class GameManager : NetworkBehaviour
 {
@@ -102,15 +103,41 @@ public class GameManager : NetworkBehaviour
 
     public void StartGame()
     {
-        if(isServer)
-        {
-            endTurnButton.SetActive(true);
-            Player player = Player.localPlayer;
+        Player player = Player.localPlayer;
+
+        if(isServerOnly){                   //the player is the server and it is null
+            if(players[0].player.GetComponent<Player>().firstPlayer){
+                player = players[0].player.GetComponent<Player>();
+                player.mana = 1;
+                player.currentMax = 1;
+                player.enemyInfo.data.mana = 1;
+                player.enemyInfo.data.currentMax = 1;
+                players[0].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
+                players[0].player.GetComponent<GameManager>().isOurTurn = true;
+            }
+            else if(players[1].player.GetComponent<Player>().firstPlayer){
+                player = players[1].player.GetComponent<Player>();
+                player.mana = 1;
+                player.currentMax = 1;
+                player.enemyInfo.data.mana = 1;
+                player.enemyInfo.data.currentMax = 1;
+                players[0].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
+                players[0].player.GetComponent<GameManager>().isOurTurn = true;
+            }
+        } 
+        else{                               //the player is the host but both users use these codes
             player.mana = 1;
             player.currentMax = 1;
             player.enemyInfo.data.mana = 1;
             player.enemyInfo.data.currentMax = 1;
-            isOurTurn = true;
+            if(player.firstPlayer){
+                endTurnButton.SetActive(true);
+                isOurTurn = true;
+            }
+            else{
+                players[1].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
+                players[1].player.GetComponent<GameManager>().isOurTurn = true;
+            }
         }
     }
 }

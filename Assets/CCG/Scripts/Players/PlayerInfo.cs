@@ -25,6 +25,8 @@ public partial struct PlayerInfo
     public string username => data.username;
     public Sprite portrait => data.portrait;
 
+    public bool firstPlayer => data.firstPlayer;
+
     // Player health and mana
     public int health => data.health;
     public int mana => data.mana;

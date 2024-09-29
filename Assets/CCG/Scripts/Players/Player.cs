@@ -22,8 +22,8 @@ public class Player : Entity
 
     [Header("Stats")]
     [SyncVar] public int maxMana = 10;
-    [SyncVar] public int currentMax = 0;
-    [SyncVar] public int _mana = 0;
+    [SyncVar] public int currentMax = 1;
+    [SyncVar] public int _mana = 1;
     public int mana
     {
         get { return Mathf.Min(_mana, maxMana); }
@@ -122,6 +122,10 @@ public class Player : Entity
         // Loop through all online Players (should just be one other Player)
         foreach (Player players in onlinePlayers)
         {
+            if(!gameManager.players.Contains(new PlayerInfo(players.gameObject))){
+                gameManager.players.Add(new PlayerInfo(players.gameObject));
+            }
+
             // Make sure the players are loaded properly (we load the usernames first)
             if (players.username != "")
             {
@@ -133,11 +137,22 @@ public class Player : Entity
                     enemyInfo = currentPlayer;
                     hasEnemy = true;
                     enemyInfo.data.casterType = Target.OPPONENT;
-                    gameManager.StartGame();
+                    if(currentPlayer.username == gameManager.players[1].username){
+                        System.Random rnd = new System.Random();
+                        Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
+                        gameManager.players[0].player.GetComponent<Player>().ChangeFirstPlayer(random);
+                        gameManager.players[1].player.GetComponent<Player>().ChangeFirstPlayer(!random);
+                    }
+                    gameManager.StartGame();   
                     //Debug.LogError("Player " + username + " Enemy " + enemy.username + " / " + enemyInfo.username); // Used for Debugging
                 }
             }
         }
+    }
+
+    public void ChangeFirstPlayer(bool v)
+    {
+        firstPlayer = v;
     }
 
     public bool IsOurTurn() => gameManager.isOurTurn;
