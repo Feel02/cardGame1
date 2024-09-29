@@ -105,39 +105,45 @@ public class GameManager : NetworkBehaviour
     {
         Player player = Player.localPlayer;
 
-        if(isServerOnly){                   //the player is the server and it is null
-            if(players[0].player.GetComponent<Player>().firstPlayer){
-                player = players[0].player.GetComponent<Player>();
+        try{
+            if(isServerOnly){                   //the player is the server and it is null
+                if(players[0].player.GetComponent<Player>().firstPlayer){
+                    player = players[0].player.GetComponent<Player>();
+                    player.mana = 1;
+                    player.currentMax = 1;
+                    player.enemyInfo.data.mana = 1;
+                    player.enemyInfo.data.currentMax = 1;
+                    players[0].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
+                    players[0].player.GetComponent<GameManager>().isOurTurn = true;
+                }
+                else if(players[1].player.GetComponent<Player>().firstPlayer){
+                    player = players[1].player.GetComponent<Player>();
+                    player.mana = 1;
+                    player.currentMax = 1;
+                    player.enemyInfo.data.mana = 1;
+                    player.enemyInfo.data.currentMax = 1;
+                    players[1].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
+                    players[1].player.GetComponent<GameManager>().isOurTurn = true;
+                }
+            } 
+            else{                               //the player is the host but both users use these codes
                 player.mana = 1;
                 player.currentMax = 1;
                 player.enemyInfo.data.mana = 1;
                 player.enemyInfo.data.currentMax = 1;
-                players[0].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
-                players[0].player.GetComponent<GameManager>().isOurTurn = true;
+                
+                    if(player.firstPlayer){
+                        endTurnButton.SetActive(true);
+                        isOurTurn = true;
+                    }
+                    else{
+                        players[1].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
+                        players[1].player.GetComponent<GameManager>().isOurTurn = true;
+                    }
+                
             }
-            else if(players[1].player.GetComponent<Player>().firstPlayer){
-                player = players[1].player.GetComponent<Player>();
-                player.mana = 1;
-                player.currentMax = 1;
-                player.enemyInfo.data.mana = 1;
-                player.enemyInfo.data.currentMax = 1;
-                players[1].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
-                players[1].player.GetComponent<GameManager>().isOurTurn = true;
-            }
-        } 
-        else{                               //the player is the host but both users use these codes
-            player.mana = 1;
-            player.currentMax = 1;
-            player.enemyInfo.data.mana = 1;
-            player.enemyInfo.data.currentMax = 1;
-            if(player.firstPlayer){
-                endTurnButton.SetActive(true);
-                isOurTurn = true;
-            }
-            else{
-                players[1].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
-                players[1].player.GetComponent<GameManager>().isOurTurn = true;
-            }
+        } catch {
+            Debug.Log("A player trying to access somewhere they shouldn't but don't worry, I can fix her.");
         }
     }
 }
