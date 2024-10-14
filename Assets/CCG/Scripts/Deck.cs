@@ -1,12 +1,13 @@
 ﻿using UnityEngine;
 using Mirror;
+using System;
 
 public class Deck : NetworkBehaviour
 {
     [Header("Player")]
     public Player player;
-    [HideInInspector] public int deckSize = 30;
-    [HideInInspector] public int handSize = 7;
+    [HideInInspector] public int deckSize = 10;
+    [HideInInspector] public int handSize = 3;
 
     [Header("Decks")]
     public SyncListCard deckList = new SyncListCard(); // DeckList used during the match. Contains all cards in the deck. This is where we'll be drawing card froms.
@@ -95,14 +96,43 @@ public class Deck : NetworkBehaviour
         if (isServer) RpcPlayCard(boardCard, index);
     }
 
-    [Command]
+    [Command (ignoreAuthority = true)]
     public void CmdStartNewTurn()
     {
         if (player.mana < player.maxMana)
         {
-            player.currentMax++;
-            player.mana = player.currentMax;
-            Debug.LogError("Here");
+            player.mana++;
+            
+            player.deck.hand.Clear();
+            player.deck.deckList.Shuffle();
+
+            for (int i = 0; i < 3; i++)
+            {
+                player.deck.hand.Insert(i, player.deck.deckList[i]);
+            }
+
+            if (isServer) RpcClearClientHand();
+        }
+    }
+
+    [ClientRpc]
+    void RpcClearClientHand()
+    {   
+        if(Player.gameManager.isRefreshing){
+            PlayerHand playerHand = Player.gameManager.playerHand;
+            int size = playerHand.handContent.transform.childCount;
+
+            for(int i = 0; i < size; i++)
+            {
+                playerHand.RemoveCard(i);
+            }
+
+            for(int i = 0; i < 3; i++)
+            {
+                playerHand.AddCard(i);
+            }
+
+            Player.gameManager.isRefreshing = false;  
         }
     }
 

@@ -28,6 +28,7 @@ public class PlayerField : MonoBehaviour, IDropHandler
 
     public void UpdateFieldCards()
     {
+        Player.gameManager.isRefreshing = true;
         int cardCount = content.childCount;
         for (int i = 0; i < cardCount; ++i)
         {
