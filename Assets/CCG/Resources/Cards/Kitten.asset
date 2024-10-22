@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 992a434fee04c2f47bebd224e2fb0dee, type: 3}
   m_Name: Kitten
   m_EditorClassIdentifier: 
-  id: 
+  id: ba13ffe71e3952f1e0dc10ca3bc1deca
   image: {fileID: 21300000, guid: 092929b7967a996478bb57510ba36b1e, type: 3}
   cost: 3
   category: 
@@ -27,5 +27,4 @@ MonoBehaviour:
   hasTaunt: 0
   deathcrys: []
   hasDeathCry: 0
-  cardPrefab: {fileID: 3966246863333951121, guid: 66532acc9bfbbe043b5ef65a717193da,
-    type: 3}
+  cardPrefab: {fileID: 3966246863333951121, guid: 66532acc9bfbbe043b5ef65a717193da, type: 3}

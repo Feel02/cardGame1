@@ -23,7 +23,7 @@ public class PlayerHand : MonoBehaviour
             if (!isStarted && IsPlayerHand())
             {
                 isStarted = true;
-                player.deck.DrawCard(7);
+                player.deck.DrawCard(3);
             }
         }
 
@@ -48,8 +48,18 @@ public class PlayerHand : MonoBehaviour
     {
         GameObject cardObj = Instantiate(cardPrefab.gameObject);
         cardObj.transform.SetParent(handContent, false);
-
+        Debug.Log("Adding card to hand " + index + "size " + player.deck.hand.Count);
         CardInfo card = player.deck.hand[index];
+        Debug.Log("Adding card to hand " + card.name);
+        HandCard slot = cardObj.GetComponent<HandCard>();
+
+        slot.AddCard(card, index, playerType);
+    }
+
+    public void AddCardDirectly(CardInfo card,int index){
+        GameObject cardObj = Instantiate(cardPrefab.gameObject);
+        cardObj.transform.SetParent(handContent, false);
+
         HandCard slot = cardObj.GetComponent<HandCard>();
 
         slot.AddCard(card, index, playerType);
@@ -66,6 +76,6 @@ public class PlayerHand : MonoBehaviour
         }
     }
 
-    bool IsEnemyHand() => player && player.hasEnemy && player.deck.hand.Count == 7 && playerType == PlayerType.ENEMY && enemyInfo.handCount != cardCount;
+    bool IsEnemyHand() => player && player.hasEnemy && player.deck.hand.Count == 3 && playerType == PlayerType.ENEMY && enemyInfo.handCount != cardCount;
     bool IsPlayerHand() => player && player.deck.spawnInitialCards && playerType == PlayerType.PLAYER;
 }

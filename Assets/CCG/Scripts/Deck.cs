@@ -1,12 +1,13 @@
 ﻿using UnityEngine;
 using Mirror;
+using System;
 
 public class Deck : NetworkBehaviour
 {
     [Header("Player")]
     public Player player;
-    [HideInInspector] public int deckSize = 30;
-    [HideInInspector] public int handSize = 7;
+    [HideInInspector] public int deckSize = 10;
+    [HideInInspector] public int handSize = 3;
 
     [Header("Decks")]
     public SyncListCard deckList = new SyncListCard(); // DeckList used during the match. Contains all cards in the deck. This is where we'll be drawing card froms.
@@ -67,10 +68,11 @@ public class Deck : NetworkBehaviour
         spawnInitialCards = false;
     }
 
-    [Command]
+    [Command (ignoreAuthority = true)]
     public void CmdPlayCard(CardInfo card, int index)
     {
         CreatureCard creature = (CreatureCard)card.data;
+        Debug.Log("Playing card " + card.name + " at index " + index + " card in the hand " + hand[index].name);
         GameObject boardCard = Instantiate(creature.cardPrefab.gameObject);
         FieldCard newCard = boardCard.GetComponent<FieldCard>();
         newCard.card = new CardInfo(card.data); // Save Card Info so we can re-access it later if we need to.
@@ -89,20 +91,97 @@ public class Deck : NetworkBehaviour
         // Spawn it
         NetworkServer.Spawn(boardCard);
 
+        Debug.Log("Playing card " + card.name + " at index " + index + " card in the hand " + hand[index].name);
+
         // Remove card from hand
         hand.RemoveAt(index);
 
         if (isServer) RpcPlayCard(boardCard, index);
+
+        if(hand.Count == 0){
+            int[] arr = new int[3];
+            RestartHand(arr);
+            RpcClearClientHand(arr);
+        }
     }
 
-    [Command]
+    public void RestartHand(int[] indexes){
+
+        for(int i = 0; i < 3; i++)
+        {
+            indexes[i] = UnityEngine.Random.Range(0, player.deck.deckList.Count);
+        }
+        
+        if(hand.Count != 0)
+            hand.Clear();
+
+        for(int i = 0; i < 3; i++)
+        {
+            hand.Add(deckList[indexes[i]]);
+        }
+    }
+
+    [Command (ignoreAuthority = true)]
+    public void CmdRestartHandAndPlayerHand()
+    {
+        int[] indexes = new int[3];
+        RestartHand(indexes);
+        if (isServer) RpcClearClientHand(indexes);
+    }
+
+    [Command (ignoreAuthority = true)]
     public void CmdStartNewTurn()
     {
         if (player.mana < player.maxMana)
         {
-            player.currentMax++;
-            player.mana = player.currentMax;
-            Debug.LogError("Here");
+            player.mana++;
+
+            int[] indexes = new int[3];
+
+            RestartHand(indexes);
+
+            /* for (int i = 0; i < player.deck.hand.Count; i++)
+            {
+                Debug.Log(player.username + " has " + hand[i].name + " in hand as " + i);
+            } */
+
+            /* Debug.Log("server side size " + player.deck.hand.Count + " first card " + player.deck.hand[0].name);
+            Debug.Log(player.username + " gained 1 mana. Total mana: " + player.mana);
+            Debug.Log(player.username + " has " + player.deck.hand.Count + " cards " + player.deck.hand[0].name +" " + player.deck.hand[1].name + " " + player.deck.hand[2].name + " in hand"); */
+
+            if (isServer) RpcClearClientHand(indexes);
+        }
+    }
+
+    [ClientRpc]
+    void RpcClearClientHand(int[] indexes)
+    {   
+
+        //Debug.Log(Player.localPlayer.username + " " + player.username + " " + Player.gameManager.isRefreshing);
+
+        if(Player.gameManager.isRefreshing){
+
+            //Debug.Log("client side size " + hand.Count + " first card " + hand[0].name);
+
+            PlayerHand playerHand = Player.gameManager.playerHand;
+            int size = playerHand.handContent.transform.childCount;
+
+            /* for (int i = 0; i < hand.Count; i++)
+            {
+                Debug.Log(player.username + " has " + hand[i].name + " in hand as " + i);
+            } */
+
+            for(int i = 0; i < size; i++)
+            {
+                playerHand.RemoveCard(i);
+            }
+
+            for(int i = 0; i < 3; i++)
+            {
+                playerHand.AddCardDirectly(deckList[indexes[i]], i);
+            }
+
+            //Player.gameManager.isRefreshing = false;  
         }
     }
 
@@ -116,6 +195,7 @@ public class Deck : NetworkBehaviour
             boardCard.transform.SetParent(Player.gameManager.playerField.content, false);
             Player.gameManager.playerHand.RemoveCard(index); // Update player's hand
             Player.gameManager.isSpawning = false;
+            
         }
         else if (player.hasEnemy)
         {

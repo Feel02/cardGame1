@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using Mirror;
+using UnityEditor;
 
 // Useful for UI. Whether the player is, well, a player or an enemy.
 public enum PlayerType { PLAYER, ENEMY };
@@ -21,7 +22,7 @@ public class Player : Entity
     [SyncVar, HideInInspector] public int tauntCount = 0; // Amount of taunt creatures on your side of the board.
 
     [Header("Stats")]
-    [SyncVar] public int maxMana = 10;
+    [SyncVar] public int maxMana = 100;
     [SyncVar] public int currentMax = 1;
     [SyncVar] public int _mana = 1;
     public int mana
@@ -52,7 +53,7 @@ public class Player : Entity
         base.OnStartClient();
 
         deck.deckList.Callback += deck.OnDeckListChange;
-        //deck.hand.Callback += deck.OnHandChange;
+         //deck.hand.Callback += deck.OnHandChange;
         deck.graveyard.Callback += deck.OnGraveyardChange;
     }
 
@@ -81,13 +82,13 @@ public class Player : Entity
         for (int i = 0; i < deck.startingDeck.Length; ++i)
         {
             CardAndAmount card = deck.startingDeck[i];
-            for (int v = 0; v < card.amount; ++v)
+            for (int v = 0; v < 3; ++v)                     //card.amount instead of 3
             {
                 deck.deckList.Add(card.amount > 0 ? new CardInfo(card.card, 1) : new CardInfo());
-                if (deck.hand.Count < 7) deck.hand.Add(new CardInfo(card.card, 1));
             }
+            if (deck.hand.Count < 3) deck.hand.Add(new CardInfo(card.card, 1));
         }
-        if (deck.hand.Count == 7)
+        if (deck.hand.Count == 3)
         {
             deck.hand.Shuffle();
         }
@@ -100,6 +101,12 @@ public class Player : Entity
         maxMana = gameManager.maxMana;
         deck.deckSize = gameManager.deckSize;
         deck.handSize = gameManager.handSize;
+        if (isServerOnly)
+        {
+            System.Random rnd = new System.Random();
+            Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
+            firstPlayer = random;
+        }
     }
 
     // Update is called once per frame
@@ -120,32 +127,29 @@ public class Player : Entity
         Player[] onlinePlayers = FindObjectsOfType<Player>();
 
         // Loop through all online Players (should just be one other Player)
-        foreach (Player players in onlinePlayers)
+        foreach (Player player in onlinePlayers)
         {
-            if(!gameManager.players.Contains(new PlayerInfo(players.gameObject))){
-                gameManager.players.Add(new PlayerInfo(players.gameObject));
-            }
-
-            // Make sure the players are loaded properly (we load the usernames first)
-            if (players.username != "")
-            {
-                // There should only be one other Player online, so if it's not us then it's the enemy.
-                if (players != this)
-                {
-                    // Get & Set PlayerInfo from our Enemy's gameObject
-                    PlayerInfo currentPlayer = new PlayerInfo(players.gameObject);
-                    enemyInfo = currentPlayer;
-                    hasEnemy = true;
-                    enemyInfo.data.casterType = Target.OPPONENT;
-                    if(currentPlayer.username == gameManager.players[1].username){
-                        System.Random rnd = new System.Random();
-                        Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
-                        gameManager.players[0].player.GetComponent<Player>().ChangeFirstPlayer(random);
-                        gameManager.players[1].player.GetComponent<Player>().ChangeFirstPlayer(!random);
-                    }
-                    gameManager.StartGame();   
-                    //Debug.LogError("Player " + username + " Enemy " + enemy.username + " / " + enemyInfo.username); // Used for Debugging
+            if(isServerOnly){
+                if(gameManager.players.Count == 2){
+                    gameManager.players[0].player.GetComponent<Player>().firstPlayer = firstPlayer;
+                    gameManager.players[1].player.GetComponent<Player>().firstPlayer = !firstPlayer;
                 }
+            }
+            else{
+                gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(player.gameObject));
+                if(player != null && player.username != ""){ 
+                    // Make sure the players are loaded properly (we load the usernames first)
+                    // There should only be one other Player online, so if it's not us then it's the enemy.
+                    if (player != this)
+                    {
+                        // Get & Set PlayerInfo from our Enemy's gameObject
+                        PlayerInfo currentPlayer = new PlayerInfo(player.gameObject);
+                        enemyInfo = currentPlayer;
+                        hasEnemy = true;
+                        enemyInfo.data.casterType = Target.OPPONENT;
+                        gameManager.StartGame();
+                    }
+                } 
             }
         }
     }
@@ -155,5 +159,6 @@ public class Player : Entity
         firstPlayer = v;
     }
 
-    public bool IsOurTurn() => gameManager.isOurTurn;
+    public bool IsOurTurn() => gameManager.isOurTurn;               
+    public bool IsRefresh() => gameManager.isRefreshing;
 }

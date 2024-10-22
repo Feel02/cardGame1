@@ -3,6 +3,7 @@ using Mirror;
 using Unity.VisualScripting;
 using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine.Analytics;
+using System.Linq;
 
 public class GameManager : NetworkBehaviour
 {
@@ -10,15 +11,15 @@ public class GameManager : NetworkBehaviour
     public int maxHealth = 30;
 
     [Header("Mana")]
-    public int maxMana = 10;
+    public int maxMana = 100;
 
     [Header("Hand")]
-    public int handSize = 7;
+    public int handSize = 3;
     public PlayerHand playerHand;
     public PlayerHand enemyHand;
 
     [Header("Deck")]
-    public int deckSize = 30; // Maximum deck size
+    public int deckSize = 10; // Maximum deck size
     public int identicalCardCount = 2; // How many identical cards we allow to have in a deck
 
     [Header("Battlefield")]
@@ -35,6 +36,7 @@ public class GameManager : NetworkBehaviour
     [HideInInspector] public bool isHovering = false;
     [HideInInspector] public bool isHoveringField = false;
     [HideInInspector] public bool isSpawning = false;
+    [HideInInspector] public bool isRefreshing = false;
 
     public SyncListPlayerInfo players = new SyncListPlayerInfo(); // Information of all players online. One is player, other is opponent.
 
@@ -96,51 +98,40 @@ public class GameManager : NetworkBehaviour
         // If isOurTurn (after updating the bool above)
         if (isOurTurn)
         {
-            playerField.UpdateFieldCards();
             Player.localPlayer.deck.CmdStartNewTurn();
+            isRefreshing = true;
+            playerField.UpdateFieldCards();
+        }
+        else{
+            isRefreshing = false;
+        }
+    }
+
+    [Command(ignoreAuthority = true)]
+    public void CmdChangeFirstPlayer(bool firstPlayer)
+    {
+        players[0].player.GetComponent<Player>().ChangeFirstPlayer(firstPlayer);
+        players[1].player.GetComponent<Player>().ChangeFirstPlayer(!firstPlayer);
+    }
+
+    [Command(ignoreAuthority = true)]
+    public void CmdAddPlayerToPlayersList(PlayerInfo player){
+        if(!players.Contains(player)){
+            players.Add(player);
         }
     }
 
     public void StartGame()
     {
         Player player = Player.localPlayer;
-
         try{
-            if(isServerOnly){                   //the player is the server and it is null
-                if(players[0].player.GetComponent<Player>().firstPlayer){
-                    player = players[0].player.GetComponent<Player>();
-                    player.mana = 1;
-                    player.currentMax = 1;
-                    player.enemyInfo.data.mana = 1;
-                    player.enemyInfo.data.currentMax = 1;
-                    players[0].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
-                    players[0].player.GetComponent<GameManager>().isOurTurn = true;
-                }
-                else if(players[1].player.GetComponent<Player>().firstPlayer){
-                    player = players[1].player.GetComponent<Player>();
-                    player.mana = 1;
-                    player.currentMax = 1;
-                    player.enemyInfo.data.mana = 1;
-                    player.enemyInfo.data.currentMax = 1;
-                    players[1].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
-                    players[1].player.GetComponent<GameManager>().isOurTurn = true;
-                }
-            } 
-            else{                               //the player is the host but both users use these codes
-                player.mana = 1;
-                player.currentMax = 1;
-                player.enemyInfo.data.mana = 1;
-                player.enemyInfo.data.currentMax = 1;
-                
-                    if(player.firstPlayer){
-                        endTurnButton.SetActive(true);
-                        isOurTurn = true;
-                    }
-                    else{
-                        players[1].player.GetComponent<GameManager>().endTurnButton.SetActive(true);
-                        players[1].player.GetComponent<GameManager>().isOurTurn = true;
-                    }
-                
+            player.mana = 1;
+            player.enemyInfo.data.mana = 1;
+            
+            if(player.firstPlayer){
+                endTurnButton.SetActive(true);
+                isOurTurn = true;
+                isRefreshing = true;
             }
         } catch {
             Debug.Log("A player trying to access somewhere they shouldn't but don't worry, I can fix her.");
