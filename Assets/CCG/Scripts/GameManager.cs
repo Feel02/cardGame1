@@ -102,6 +102,9 @@ public class GameManager : NetworkBehaviour
             isRefreshing = true;
             playerField.UpdateFieldCards();
         }
+        else{
+            isRefreshing = false;
+        }
     }
 
     [Command(ignoreAuthority = true)]
