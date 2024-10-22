@@ -19,6 +19,7 @@ UserSettings/
 
 # Visual Studio Code
 .vscode/
+.lh/
 
 # Rider
 .idea/

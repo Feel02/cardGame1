@@ -15,8 +15,9 @@ public class PlayerField : MonoBehaviour, IDropHandler
         if (player.IsOurTurn() && player.deck.CanPlayCard(manaCost))
         {
             int index = card.handIndex;
+            //Debug.Log("dsvsdvdfdfv " + Player.gameManager.playerHand.handContent.transform.GetChild(0).GetComponent<HandCard>().cardName.text);
             CardInfo cardInfo = player.deck.hand[index];
-            //Debug.LogError(index + " / " + cardInfo.name);
+            Debug.LogError(index + " / " + cardInfo.name);
             //
             Player.gameManager.isSpawning = true;
             Player.gameManager.isHovering = false;

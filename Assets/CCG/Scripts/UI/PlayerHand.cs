@@ -48,8 +48,9 @@ public class PlayerHand : MonoBehaviour
     {
         GameObject cardObj = Instantiate(cardPrefab.gameObject);
         cardObj.transform.SetParent(handContent, false);
-
+        Debug.Log("Adding card to hand " + index + "size " + player.deck.hand.Count);
         CardInfo card = player.deck.hand[index];
+        Debug.Log("Adding card to hand " + card.name);
         HandCard slot = cardObj.GetComponent<HandCard>();
 
         slot.AddCard(card, index, playerType);

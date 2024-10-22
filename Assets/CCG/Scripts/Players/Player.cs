@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using Mirror;
+using UnityEditor;
 
 // Useful for UI. Whether the player is, well, a player or an enemy.
 public enum PlayerType { PLAYER, ENEMY };
@@ -100,6 +101,12 @@ public class Player : Entity
         maxMana = gameManager.maxMana;
         deck.deckSize = gameManager.deckSize;
         deck.handSize = gameManager.handSize;
+        if (isServerOnly)
+        {
+            System.Random rnd = new System.Random();
+            Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
+            firstPlayer = random;
+        }
     }
 
     // Update is called once per frame
@@ -122,26 +129,28 @@ public class Player : Entity
         // Loop through all online Players (should just be one other Player)
         foreach (Player player in onlinePlayers)
         {
-            if(player != null && player.username != ""){ 
-                gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(player.gameObject));
-
-                // Make sure the players are loaded properly (we load the usernames first)
-                // There should only be one other Player online, so if it's not us then it's the enemy.
-                if (player != this)
-                {
-                    // Get & Set PlayerInfo from our Enemy's gameObject
-                    PlayerInfo currentPlayer = new PlayerInfo(player.gameObject);
-                    enemyInfo = currentPlayer;
-                    hasEnemy = true;
-                    enemyInfo.data.casterType = Target.OPPONENT;
-                    if(currentPlayer.username == gameManager.players[1].username){
-                        System.Random rnd = new System.Random();
-                        Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
-                        gameManager.CmdChangeFirstPlayer(random);
-                    }
-                    gameManager.StartGame();
+            if(isServerOnly){
+                if(gameManager.players.Count == 2){
+                    gameManager.players[0].player.GetComponent<Player>().firstPlayer = firstPlayer;
+                    gameManager.players[1].player.GetComponent<Player>().firstPlayer = !firstPlayer;
                 }
-            } 
+            }
+            else{
+                gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(player.gameObject));
+                if(player != null && player.username != ""){ 
+                    // Make sure the players are loaded properly (we load the usernames first)
+                    // There should only be one other Player online, so if it's not us then it's the enemy.
+                    if (player != this)
+                    {
+                        // Get & Set PlayerInfo from our Enemy's gameObject
+                        PlayerInfo currentPlayer = new PlayerInfo(player.gameObject);
+                        enemyInfo = currentPlayer;
+                        hasEnemy = true;
+                        enemyInfo.data.casterType = Target.OPPONENT;
+                        gameManager.StartGame();
+                    }
+                } 
+            }
         }
     }
 
