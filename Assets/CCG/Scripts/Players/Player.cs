@@ -2,6 +2,7 @@
 using UnityEngine;
 using Mirror;
 using UnityEditor;
+using Unity.VisualScripting;
 
 // Useful for UI. Whether the player is, well, a player or an enemy.
 public enum PlayerType { PLAYER, ENEMY };
@@ -38,11 +39,9 @@ public class Player : Entity
     // We store all our enemy's info in a PlayerInfo struct so we can pass it through the network when needed.
     [HideInInspector] public static GameManager gameManager;
     [SyncVar, HideInInspector] public bool firstPlayer = false; // Is it player 1, player 2, etc.
-
     public override void OnStartLocalPlayer()
     {
         localPlayer = this;
-
         // Get and update the player's username and stats
         CmdLoadPlayer(PlayerPrefs.GetString("Name"));
         CmdLoadDeck();
@@ -153,7 +152,7 @@ public class Player : Entity
             }
         }
     }
-
+    
     public void ChangeFirstPlayer(bool v)
     {
         firstPlayer = v;

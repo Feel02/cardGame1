@@ -37,6 +37,7 @@ public class GameManager : NetworkBehaviour
     [HideInInspector] public bool isHoveringField = false;
     [HideInInspector] public bool isSpawning = false;
     [HideInInspector] public bool isRefreshing = false;
+    public TimerScript timer; // Reference to the TimerScript
 
     public SyncListPlayerInfo players = new SyncListPlayerInfo(); // Information of all players online. One is player, other is opponent.
 
@@ -85,6 +86,7 @@ public class GameManager : NetworkBehaviour
     [Command(ignoreAuthority = true)]
     public void CmdEndTurn()
     {
+        timer.StopTimer();
         RpcSetTurn();
     }
 
@@ -101,11 +103,20 @@ public class GameManager : NetworkBehaviour
             Player.localPlayer.deck.CmdStartNewTurn();
             isRefreshing = true;
             playerField.UpdateFieldCards();
+            timer.StartTimer();
         }
         else{
             isRefreshing = false;
+             timer.StopTimer();
         }
     }
+
+    [ClientRpc]
+    public void RpcTakeDamageToSelf(int amount)
+    {
+        if(isOurTurn)
+            Player.localPlayer.combat.CmdChangeHealth(-amount);
+    }    
 
     [Command(ignoreAuthority = true)]
     public void CmdChangeFirstPlayer(bool firstPlayer)
@@ -132,6 +143,7 @@ public class GameManager : NetworkBehaviour
                 endTurnButton.SetActive(true);
                 isOurTurn = true;
                 isRefreshing = true;
+                timer.StartTimer();
             }
         } catch {
             Debug.Log("A player trying to access somewhere they shouldn't but don't worry, I can fix her.");
