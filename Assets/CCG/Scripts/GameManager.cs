@@ -107,7 +107,7 @@ public class GameManager : NetworkBehaviour
         }
         else{
             isRefreshing = false;
-             timer.StopTimer();
+            timer.StopTimer();
         }
     }
 

@@ -2,6 +2,7 @@
 using System;
 using Mirror;
 using System.Collections.Generic;
+using UnityEditor;
 
 [Serializable]
 public abstract partial class Entity : NetworkBehaviour
@@ -42,6 +43,17 @@ public abstract partial class Entity : NetworkBehaviour
         Vector3 spawnPos = spawnOffset == null ? transform.position : spawnOffset.position;
         arrowObject = Instantiate(arrow.gameObject, spawnPos, Quaternion.identity);
         arrowObject.GetComponent<TargetingArrow>().DrawLine(this, card, spawnPos, IsAbility);
+    }
+
+    [ClientRpc]
+    public void RpcDie()
+    {
+        PlayerPrefs.SetInt("playerHealth", Player.localPlayer.combat.entity.health);
+        if(!Player.gameManager.isOurTurn) PlayerPrefs.SetInt("playerHealth", -1);
+        NetworkManager.singleton.StopHost();
+        Destroy(NetworkManager.singleton.gameObject);
+        Destroy(gameObject);
+        UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 
     public void DestroyTargetingArrow()
