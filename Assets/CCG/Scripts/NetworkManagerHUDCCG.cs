@@ -17,35 +17,29 @@ public class NetworkManagerHUDCCG : MonoBehaviour
 
     string username = "";
 
-    /// <summary>
-    /// Whether to show the default control HUD at runtime.
-    /// </summary>
-    public bool showGUI = true;
-
-    /// <summary>
-    /// The horizontal offset in pixels to draw the HUD runtime GUI at.
-    /// </summary>
-    public int offsetX;
-
-    /// <summary>
-    /// The vertical offset in pixels to draw the HUD runtime GUI at.
-    /// </summary>
-    public int offsetY;
-
     void Awake()
     {
         manager = GetComponent<NetworkManager>();
 
         // Set last username used (if any) in the username's input field
         if (PlayerPrefs.GetString("Name") != null) username = PlayerPrefs.GetString("Name");
+        else username = "Player";
+        if (PlayerPrefs.GetString("InputServerIp") != null) manager.networkAddress = PlayerPrefs.GetString("InputServerIp");
+        else manager.networkAddress = "localhost";
+        
+        int isClient = PlayerPrefs.GetInt("isClient");
+        if(isClient == 0)
+        {
+            manager.StartClient();
+        }
+        else{
+            manager.StartServer();
+        }
     }
+}
 
-    void OnGUI()
+    /* void OnGUI()
     {
-        if (!showGUI)
-            return;
-
-        GUILayout.BeginArea(new Rect(10 + offsetX, 40 + offsetY, 215, 9999));
         if (!NetworkClient.isConnected && !NetworkServer.active)
         {
             StartButtons();
@@ -58,14 +52,11 @@ public class NetworkManagerHUDCCG : MonoBehaviour
         // client ready
         if (NetworkClient.isConnected && !ClientScene.ready)
         {
-            if (GUILayout.Button("Client Ready"))
-            {
-                ClientScene.Ready(NetworkClient.connection);
+            ClientScene.Ready(NetworkClient.connection);
 
-                if (ClientScene.localPlayer == null)
-                {
-                    ClientScene.AddPlayer(NetworkClient.connection);
-                }
+            if (ClientScene.localPlayer == null)
+            {
+                ClientScene.AddPlayer(NetworkClient.connection);
             }
         }
 
@@ -101,6 +92,8 @@ public class NetworkManagerHUDCCG : MonoBehaviour
 
                 // Save the player's username
                 PlayerPrefs.SetString("Name", username);
+
+                PlayerPrefs.SetInt("playerHealth", 30);
 
                 // Hide GUI
                 showGUI = false;
@@ -174,4 +167,4 @@ public class NetworkManagerHUDCCG : MonoBehaviour
             }
         }
     }
-}
+} */
