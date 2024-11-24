@@ -26,6 +26,9 @@ public class GameManager : NetworkBehaviour
     public PlayerField playerField;
     public PlayerField enemyField;
 
+    public PlayerWallet playerWallet;
+    public PlayerWallet enemyWallet;
+
     [Header("Turn Management")]
     public GameObject endTurnButton;
     [HideInInspector] public bool isOurTurn = false;

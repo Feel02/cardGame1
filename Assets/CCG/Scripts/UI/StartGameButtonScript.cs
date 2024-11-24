@@ -9,15 +9,15 @@ using Unity.VisualScripting;
 public class StartGameButtonScript : MonoBehaviour
 {
     public TMPro.TMP_InputField serverIp;
-    public TMPro.TMP_InputField name;
+    public TMPro.TMP_InputField username;
 
     public void Start(){
-        if (PlayerPrefs.GetString("Name") != null) name.text = PlayerPrefs.GetString("Name");
+        if (PlayerPrefs.GetString("Name") != null) username.text = PlayerPrefs.GetString("Name");
         if (PlayerPrefs.GetString("InputServerIp") != null) serverIp.text = PlayerPrefs.GetString("InputServerIp");
     }
     public void StartGameClient()
     {
-        PlayerPrefs.SetString("Name", name.text);
+        PlayerPrefs.SetString("Name", username.text);
         PlayerPrefs.SetString("InputServerIp", serverIp.text);
         PlayerPrefs.SetInt("isClient", 0);
 
@@ -26,7 +26,7 @@ public class StartGameButtonScript : MonoBehaviour
 
     public void StartGameServer()
     {
-        PlayerPrefs.SetString("Name", name.text);
+        PlayerPrefs.SetString("Name", username.text);
         PlayerPrefs.SetString("InputServerIp", serverIp.text);
         PlayerPrefs.SetInt("isClient", 1);
 

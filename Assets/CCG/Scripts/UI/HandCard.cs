@@ -2,9 +2,12 @@
 using Mirror;
 using UnityEngine.UI;
 using UnityEngine.XR;
+using UnityEngine.EventSystems;
 
-public class HandCard : MonoBehaviour
+public class HandCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    public Transform originalParent; // Store the starting parent
+    
     [Header("Sprite")]
     public Image image;
 
@@ -102,6 +105,27 @@ public class HandCard : MonoBehaviour
                 cardDragHover.canDrag = player.deck.CanPlayCard(manaCost);
                 cardOutline.color = cardDragHover.canDrag ? readyColor : Color.clear;
             }
+        }
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        // Store the original parent when dragging starts
+        originalParent = transform.parent;
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        // Move the card along with the pointer
+        transform.position = eventData.position;
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        // Reset the position if not dropped on a valid zone
+        if (transform.parent == originalParent)
+        {
+            transform.localPosition = Vector3.zero;
         }
     }
 }
