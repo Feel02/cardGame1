@@ -28,11 +28,11 @@ public class PlayerField : MonoBehaviour, IDropHandler
         if (player.IsOurTurn())
         {
             int index = card.handIndex;
-            CardInfo cardInfo = player.deck.hand[index];
+            CardInfo cardInfo = player.deck.wallet[index];
             Player.gameManager.isSpawning = true;
             Player.gameManager.isHovering = false;
             Player.gameManager.CmdOnCardHover(0, index);
-            player.deck.CmdPlayCard(cardInfo, index, true); // Summon card onto the board
+            player.deck.CmdPlayCard(cardInfo, index); // Summon card onto the board
         }
     }
 
