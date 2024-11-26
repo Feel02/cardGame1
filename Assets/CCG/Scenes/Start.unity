@@ -173,7 +173,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   serverIp: {fileID: 2105781411}
-  name: {fileID: 340980062}
+  username: {fileID: 340980062}
 --- !u!1 &24045160
 GameObject:
   m_ObjectHideFlags: 0

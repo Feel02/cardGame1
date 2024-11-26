@@ -16,6 +16,7 @@ public class Deck : NetworkBehaviour
 
     [Header("Battlefield")]
     public SyncListCard playerField = new SyncListCard(); // Field where we summon creatures.
+    public SyncListCard wallet = new SyncListCard(); // Cards in player's hand during the match.
 
     [Header("Starting Deck")]
     public CardAndAmount[] startingDeck;
@@ -72,7 +73,7 @@ public class Deck : NetworkBehaviour
     public void CmdPlayCard(CardInfo card, int index)
     {
         CreatureCard creature = (CreatureCard)card.data;
-        Debug.Log("Playing card " + card.name + " at index " + index + " card in the hand " + hand[index].name);
+        //Debug.Log("Playing card " + card.name + " at index " + index + " card in the hand " + hand[index].name);
         GameObject boardCard = Instantiate(creature.cardPrefab.gameObject);
         FieldCard newCard = boardCard.GetComponent<FieldCard>();
         newCard.card = new CardInfo(card.data); // Save Card Info so we can re-access it later if we need to.
@@ -91,18 +92,12 @@ public class Deck : NetworkBehaviour
         // Spawn it
         NetworkServer.Spawn(boardCard);
 
-        Debug.Log("Playing card " + card.name + " at index " + index + " card in the hand " + hand[index].name);
+        /* // Remove card from hand
+        hand.RemoveAt(index); */
+        wallet.RemoveAt(index);
 
-        // Remove card from hand
-        hand.RemoveAt(index);
-
-        if (isServer) RpcPlayCard(boardCard, index);
-
-        if(hand.Count == 0){
-            int[] arr = new int[3];
-            RestartHand(arr);
-            RpcClearClientHand(arr);
-        }
+        if (isServer) 
+            RpcPlayCardField(boardCard,index); 
     }
 
     public void RestartHand(int[] indexes){
@@ -186,14 +181,14 @@ public class Deck : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void RpcPlayCard(GameObject boardCard, int index)
+    public void RpcPlayCardField(GameObject boardCard, int index)
     {
         if (Player.gameManager.isSpawning)
         {
             // Set our FieldCard as a FRIENDLY creature for our local player, and ENEMY for our opponent.
             boardCard.GetComponent<FieldCard>().casterType = Target.FRIENDLIES;
             boardCard.transform.SetParent(Player.gameManager.playerField.content, false);
-            Player.gameManager.playerHand.RemoveCard(index); // Update player's hand
+            Player.gameManager.playerWallet.RemoveCard(index); // Update player's wallet
             Player.gameManager.isSpawning = false;
             
         }
@@ -201,7 +196,34 @@ public class Deck : NetworkBehaviour
         {
             boardCard.GetComponent<FieldCard>().casterType = Target.ENEMIES;
             boardCard.transform.SetParent(Player.gameManager.enemyField.content, false);
-            Player.gameManager.enemyHand.RemoveCard(index);
+            //Player.gameManager.enemyHand.RemoveCard(index);
         }
     }
+
+    [Command (ignoreAuthority = true)]
+    public void CmdRemoveCard(int index)
+    {
+        Debug.Log("Removing card " + hand[index].name + " at index " + index);
+        wallet.Add(hand[index]);
+        hand.RemoveAt(index);
+        if (isServer) RpcRemoveCard(index);
+
+        if(hand.Count == 0){
+            int[] arr = new int[3];
+            RestartHand(arr);
+            RpcClearClientHand(arr);
+        }
+    }
+
+    [ClientRpc]
+    void RpcRemoveCard(int index)
+    {   
+        Debug.Log("1Removing card " + hand[index].name + " at index " + index);
+        if(Player.gameManager.isSpawning){
+            Debug.Log("2Removing card " + hand[index].name + " at index " + index);
+            PlayerHand playerHand = Player.gameManager.playerHand;
+            playerHand.RemoveCard(index);  
+        }
+    }
+
 }
