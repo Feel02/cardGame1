@@ -32,6 +32,8 @@ public class HandCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDrag
     [HideInInspector] public int handIndex;
     [HideInInspector] public PlayerType playerType;
 
+    [HideInInspector] public bool isInWallet = false;
+
     // Called from PlayerHand to instantiate the cards in the player's hand
     public void AddCard(CardInfo newCard, int index, PlayerType playerT)
     {
@@ -95,33 +97,38 @@ public class HandCard : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDrag
 
     private void Update()
     {
-        if (playerType == PlayerType.PLAYER && cardDragHover != null)
-        {
-            // Only drag during our turn, if our player has enough mana.
-            Player player = Player.localPlayer;
-            int manaCost = cost.text.ToInt();
-            if (Player.gameManager.isOurTurn)
+        if(!isInWallet){
+            if (playerType == PlayerType.PLAYER && cardDragHover != null)
             {
-                cardDragHover.canDrag = player.deck.CanPlayCard(manaCost);
-                cardOutline.color = cardDragHover.canDrag ? readyColor : Color.clear;
+                // Only drag during our turn, if our player has enough mana.
+                Player player = Player.localPlayer;
+                int manaCost = cost.text.ToInt();
+                if (Player.gameManager.isOurTurn)
+                {
+                    cardDragHover.canDrag = player.deck.CanPlayCard(manaCost);
+                    cardOutline.color = cardDragHover.canDrag ? readyColor : Color.clear;
+                }
             }
         }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (!cardDragHover.canDrag) return;
         // Store the original parent when dragging starts
         originalParent = transform.parent;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (!cardDragHover.canDrag) return;
         // Move the card along with the pointer
         transform.position = eventData.position;
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (!cardDragHover.canDrag) return;
         // Reset the position if not dropped on a valid zone
         if (transform.parent == originalParent)
         {

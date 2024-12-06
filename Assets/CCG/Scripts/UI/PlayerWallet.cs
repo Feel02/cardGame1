@@ -19,19 +19,24 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
     {
         player = Player.localPlayer;
 
+        if (player && player.hasEnemy)
+        {
+            enemyInfo = player.enemyInfo;
+        }
+
         if (IsEnemyHand())
         {
             // instantiate/destroy enough slots
-            UIUtils.BalancePrefabs(cardPrefab.gameObject, enemyInfo.handCount, walletContent);
+            UIUtils.BalancePrefabs(cardPrefab.gameObject, enemyInfo.walletCount, walletContent);
 
             // refresh all members
-            for (int i = 0; i < enemyInfo.handCount; ++i)
+            for (int i = 0; i < enemyInfo.walletCount; ++i)
             {
                 HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
 
                 slot.AddCardBack();
 
-                cardCount = enemyInfo.handCount;
+                cardCount = enemyInfo.walletCount;
             }
         }
     }
@@ -55,7 +60,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
 
         if (player.IsOurTurn() && player.deck.CanPlayCard(manaCost))
         {
-            if(Player.gameManager.playerWallet.walletContent.childCount < 7){
+            if(Player.gameManager.playerWallet.walletContent.childCount < 6){
                 player.combat.CmdChangeMana(-manaCost);
                 int index = card.handIndex;
                 Player.gameManager.isSpawning = true;
@@ -77,6 +82,9 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         HandCard slot = cardObj.GetComponent<HandCard>();
         slot.AddCard(card, Player.gameManager.playerWallet.walletContent.childCount - 1, playerType);
         slot.cardOutline.gameObject.SetActive(false);
+        slot.cardDragHover.canDrag = true;
+        slot.isInWallet = true;
+        slot.handIndex = Player.gameManager.playerWallet.walletContent.childCount - 1;
     }
 
     public void AddCardDirectly(CardInfo card,int index){
