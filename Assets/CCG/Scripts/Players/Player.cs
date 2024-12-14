@@ -22,7 +22,7 @@ public class Player : Entity
     public Sprite cardback;
     [SyncVar, HideInInspector] public int tauntCount = 0; // Amount of taunt creatures on your side of the board.
 
-    [Header("Stats")]
+    [Header("Mana")]
     [SyncVar] public int maxMana = 100;
     [SyncVar] public int currentMax = 1;
     [SyncVar] public int _mana = 1;
@@ -31,6 +31,7 @@ public class Player : Entity
         get { return Mathf.Min(_mana, maxMana); }
         set { _mana = Mathf.Clamp(value, 0, maxMana); }
     }
+
 
     // Quicker access for UI scripts
     [HideInInspector] public static Player localPlayer;
@@ -81,7 +82,8 @@ public class Player : Entity
         for (int i = 0; i < deck.startingDeck.Length; ++i)
         {
             CardAndAmount card = deck.startingDeck[i];
-            for (int v = 0; v < 3; ++v)                     //card.amount instead of 3
+            CreatureCard creature = (CreatureCard)card.card;
+            for (int v = 0; v < creature.amount; v++)                     //card.amount instead of 3
             {
                 deck.deckList.Add(card.amount > 0 ? new CardInfo(card.card, 1) : new CardInfo());
             }

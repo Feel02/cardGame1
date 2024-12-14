@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using Mirror;
 using System;
+using System.Linq;
 
 public class Deck : NetworkBehaviour
 {
@@ -41,7 +42,7 @@ public class Deck : NetworkBehaviour
     public void UpdateDeck(int index, int type, CardInfo newCard)
     {
         // Deck List
-        if (type == 1) deckList[index] = newCard;
+        if (type == 1) deckList[index] = newCard; //startingDeck'ten ismini bulup deckList'ten kartı bulup karıt çekmen lazım
 
         // Hand
         if (type == 2) hand[index] = newCard;
@@ -201,12 +202,12 @@ public class Deck : NetworkBehaviour
     }
 
     [Command (ignoreAuthority = true)]
-    public void CmdRemoveCard(int index)
+    public void CmdRemoveCardFromHand(int index)
     {
-        Debug.Log("Removing card " + hand[index].name + " at index " + index);
+        Debug.Log("0Removing card " + hand[index].name + " at index " + index + " from hand");
         wallet.Add(hand[index]);
         hand.RemoveAt(index);
-        if (isServer) RpcRemoveCard(index);
+        if (isServer) RpcRemoveCardFromHand(index);
 
         if(hand.Count == 0){
             int[] arr = new int[3];
@@ -216,14 +217,33 @@ public class Deck : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcRemoveCard(int index)
+    void RpcRemoveCardFromHand(int index)
     {   
-        Debug.Log("1Removing card " + hand[index].name + " at index " + index);
+        Debug.Log("1Removing card " + hand[index].name + " at index " + index + " from hand");
         if(Player.gameManager.isSpawning){
-            Debug.Log("2Removing card " + hand[index].name + " at index " + index);
+            Debug.Log("2Removing card " + hand[index].name + " at index " + index + " from hand");
             PlayerHand playerHand = Player.gameManager.playerHand;
             playerHand.RemoveCard(index);  
         }
     }
 
+    [Command (ignoreAuthority = true)]
+    public void CmdAddCardToWallet(int index)
+    {
+        String name = startingDeck[index].card.name;
+        //create a namelist[] from the decklist's names
+        String[] nameList = new String[deckList.Count];
+        for (int i = 0; i < deckList.Count; i++)
+        {
+            nameList[i] = deckList[i].name;
+        }
+        int inx = Array.IndexOf(nameList, name);
+        wallet.Add(deckList[inx]);
+    }
+
+    [Command (ignoreAuthority = true)]
+    public void CmdRemoveCardFromWallet(int index)
+    {
+        wallet.RemoveAt(index);
+    }
 }

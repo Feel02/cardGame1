@@ -107,16 +107,18 @@ MonoBehaviour:
   deckSize: 0
   handSize: 7
   startingDeck:
-  - card: {fileID: 11400000, guid: 8ec01c1a6eddc8141b9d75b9b76e1630, type: 2}
-    amount: 1
   - card: {fileID: 11400000, guid: ce27ae6b0656c4d48a646cbb43458cda, type: 2}
     amount: 1
-  - card: {fileID: 11400000, guid: ed3d5391410892a448e16d4d72270cea, type: 2}
+  - card: {fileID: 11400000, guid: 66a8350e901057b4794b8abf9c82bd57, type: 2}
     amount: 1
   - card: {fileID: 11400000, guid: d611b6dc488d47144be2f5a5b723ee50, type: 2}
     amount: 1
   - card: {fileID: 11400000, guid: bb5d76108a9d6944a968d682d55cb63f, type: 2}
-    amount: 26
+    amount: 1
+  - card: {fileID: 11400000, guid: 8ec01c1a6eddc8141b9d75b9b76e1630, type: 2}
+    amount: 1
+  - card: {fileID: 11400000, guid: ed3d5391410892a448e16d4d72270cea, type: 2}
+    amount: 1
   spawnInitialCards: 1
 --- !u!114 &1537437544569787812
 MonoBehaviour:
