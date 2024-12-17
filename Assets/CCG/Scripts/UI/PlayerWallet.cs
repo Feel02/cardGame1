@@ -76,8 +76,12 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         Player.gameManager.isHovering = false;
         Player.gameManager.CmdOnCardHover(0, index);
         CardInfo card = player.deck.hand[index];
+        //Debug.Log("0Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
+        //Debug.Log("Card name " + card.name);
         AddCard(index);
+        //Debug.Log("1Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
         player.deck.CmdRemoveCardFromHand(index);
+        //Debug.Log("2Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
 
         //create a scriptablecards array from the starting deck.card items
         ScriptableCard[] startDeck = new ScriptableCard[player.deck.startingDeck.Length];
@@ -93,16 +97,21 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
                 if(Array.IndexOf(startDeck, card.data) == 0){ 
                     /* RemoveCard(walletContent.childCount - 1);
                     RemoveCard(i); */
-                    Debug.Log("Car " + walletContent.childCount);
+                    //Debug.Log("Car " + walletContent.childCount);
+                    //Debug.Log("Carr " + Player.localPlayer.deck.wallet.Count);
                     AddCardFromStartingDeck(1);
-                    Debug.Log("Ca " + walletContent.childCount);
-                    for(int j = 0; j < walletContent.childCount; j++){
-                        Debug.Log("Wallet card " + j + " " + walletContent.GetChild(j).name);
-                    }
+                    //Debug.Log("Ca " + walletContent.childCount);
+                    //Debug.Log("Caa " + Player.localPlayer.deck.wallet.Count);
+                    /* for(int j = 0; j < walletContent.childCount; j++){
+                        Debug.Log("Wallet card " + j + " " + walletContent.GetChild(j).GetComponent<HandCard>().cardName.text);
+                    } */
+                    /* RemoveCard(walletContent.childCount - 2);
+                    RemoveCard(i);
+                    RemoveCardFromWallet(i); */
                     RemoveCard(walletContent.childCount - 2);
                     RemoveCard(i);
-                    RemoveCardFromWallet(i);
-                    
+                    player.deck.CmdRemoveCardFromWallet(walletContent.childCount - 2);
+                    player.deck.CmdRemoveCardFromWallet(i);
                     return;
                 }
             }
@@ -115,7 +124,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         cardObj.transform.SetParent(walletContent, false);
         CardInfo card = player.deck.hand[index]; 
         HandCard slot = cardObj.GetComponent<HandCard>();
-        Debug.Log("Index Of " + card.name + " to wallet is " + player.deck.wallet.Count); 
+        //Debug.Log("Index Of " + card.name + " to wallet is " + player.deck.wallet.Count); 
         slot.AddCard(card, player.deck.wallet.Count, playerType);
         slot.cardOutline.gameObject.SetActive(false);
         slot.cardDragHover.canDrag = true;
@@ -126,7 +135,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         cardObj.transform.SetParent(walletContent, false);
         HandCard slot = cardObj.GetComponent<HandCard>();
         CardInfo cardInfo = new CardInfo(player.deck.startingDeck[index].card, 1);     
-        slot.AddCard(cardInfo, walletContent.childCount, playerType);       //walletContent.childCount - 1
+        slot.AddCard(cardInfo, player.deck.wallet.Count + 1, playerType);       //walletContent.childCount - 1
         slot.cardOutline.gameObject.SetActive(false);
         slot.cardDragHover.canDrag = true;
         slot.isInWallet = true;
@@ -135,7 +144,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
 
     public void RemoveCard(int index)
     {
-        for (int i = index; i < player.deck.wallet.Count; ++i)
+        for (int i = index; i < walletContent.childCount; ++i)
         {
             HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
             int count = i;
@@ -144,7 +153,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         }
     }
 
-    public void RemoveCardFromWallet(int index)
+    /* public void RemoveCardFromWallet(int index)
     {
         for (int i = index; i < player.deck.wallet.Count; ++i)
         {
@@ -153,10 +162,10 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
             if (count == index){player.deck.CmdRemoveCardFromWallet(count); slot.RemoveCard(); }
             else if (slot.handIndex > index) slot.handIndex--;
         }
-    }
+    } */
 
     
 
-    bool IsEnemyHand() => player && player.hasEnemy && player.deck.hand.Count == 3 && playerType == PlayerType.ENEMY && enemyInfo.handCount != cardCount;
+    bool IsEnemyHand() => player && player.hasEnemy && playerType == PlayerType.ENEMY && enemyInfo.handCount != cardCount;
     bool IsPlayerHand() => player && player.deck.spawnInitialCards && playerType == PlayerType.PLAYER;
 }

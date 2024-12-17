@@ -95,10 +95,32 @@ public class Deck : NetworkBehaviour
 
         /* // Remove card from hand
         hand.RemoveAt(index); */
+        //Debug.Log("SDNVSDLLVSDMVKDSMKVMSDKLMLVSDKMVLSKDMVLKSLSMVD");
         wallet.RemoveAt(index);
+        //Player.gameManager.playerWallet.RemoveCard(index);
 
         if (isServer) 
             RpcPlayCardField(boardCard,index); 
+    }
+
+    [ClientRpc]
+    public void RpcPlayCardField(GameObject boardCard, int index)
+    {
+        if (Player.gameManager.isSpawning)
+        {
+            // Set our FieldCard as a FRIENDLY creature for our local player, and ENEMY for our opponent.
+            boardCard.GetComponent<FieldCard>().casterType = Target.FRIENDLIES;
+            boardCard.transform.SetParent(Player.gameManager.playerField.content, false);
+            Player.gameManager.playerWallet.RemoveCard(index); // Update player's wallet
+            Player.gameManager.isSpawning = false;
+            
+        }
+        else if (player.hasEnemy)
+        {
+            boardCard.GetComponent<FieldCard>().casterType = Target.ENEMIES;
+            boardCard.transform.SetParent(Player.gameManager.enemyField.content, false);
+            //Player.gameManager.enemyWallet.RemoveCard(index);
+        }
     }
 
     public void RestartHand(int[] indexes){
@@ -181,26 +203,6 @@ public class Deck : NetworkBehaviour
         }
     }
 
-    [ClientRpc]
-    public void RpcPlayCardField(GameObject boardCard, int index)
-    {
-        if (Player.gameManager.isSpawning)
-        {
-            // Set our FieldCard as a FRIENDLY creature for our local player, and ENEMY for our opponent.
-            boardCard.GetComponent<FieldCard>().casterType = Target.FRIENDLIES;
-            boardCard.transform.SetParent(Player.gameManager.playerField.content, false);
-            Player.gameManager.playerWallet.RemoveCard(index); // Update player's wallet
-            Player.gameManager.isSpawning = false;
-            
-        }
-        else if (player.hasEnemy)
-        {
-            boardCard.GetComponent<FieldCard>().casterType = Target.ENEMIES;
-            boardCard.transform.SetParent(Player.gameManager.enemyField.content, false);
-            //Player.gameManager.enemyWallet.RemoveCard(index);
-        }
-    }
-
     [Command (ignoreAuthority = true)]
     public void CmdRemoveCardFromHand(int index)
     {
@@ -219,9 +221,9 @@ public class Deck : NetworkBehaviour
     [ClientRpc]
     void RpcRemoveCardFromHand(int index)
     {   
-        Debug.Log("1Removing card " + hand[index].name + " at index " + index + " from hand");
+        //Debug.Log("1Removing card " + hand[index].name + " at index " + index);
         if(Player.gameManager.isSpawning){
-            Debug.Log("2Removing card " + hand[index].name + " at index " + index + " from hand");
+            //Debug.Log("2Removing card " + hand[index].name + " at index " + index);
             PlayerHand playerHand = Player.gameManager.playerHand;
             playerHand.RemoveCard(index);  
         }
@@ -244,6 +246,17 @@ public class Deck : NetworkBehaviour
     [Command (ignoreAuthority = true)]
     public void CmdRemoveCardFromWallet(int index)
     {
+
+        //Debug.Log("00Size of the wallet " + wallet.Count);
+        /* for(int i = 0; i < wallet.Count; i++){
+            Debug.Log("Card " + i + " " + wallet[i].name);
+        } */
         wallet.RemoveAt(index);
+        /* for(int i = 0; i < wallet.Count; i++){
+            Debug.Log("Card " + i + " " + wallet[i].name);
+        } */
+        //Debug.Log("01Size of the wallet " + wallet.Count);
+
+        //if (isServer) RpcRemoveCardFromWallet(index);
     }
 }
