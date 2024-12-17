@@ -22,6 +22,7 @@ public partial class CreatureCard : ScriptableCard
     [Header("Specialities")]
     public bool hasCharge = false;
     public bool hasTaunt = false;
+    public int amount = 1; 
 
     [Header("Death Abilities")]
     public List<CardAbility> deathcrys = new List<CardAbility>();

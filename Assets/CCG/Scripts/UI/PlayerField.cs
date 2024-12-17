@@ -19,7 +19,7 @@ public class PlayerField : MonoBehaviour, IDropHandler
         Transform startingParent = card.originalParent;
 
         // You can now make decisions based on the startingParent
-        if (startingParent != startingComp)
+        if (startingParent == null || startingParent != startingComp)
         {
             Debug.Log("Card was not dragged from the player's wallet. Rejecting drop.");
             return;

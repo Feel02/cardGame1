@@ -38,6 +38,7 @@ public partial struct PlayerInfo
     public int handCount => data.deck.hand.Count;
     public int deckCount => data.deck.deckList.Count;
     public int graveCount => data.deck.graveyard.Count;
+    public int walletCount => data.deck.wallet.Count;
 }
 
 // Card List
