@@ -28,7 +28,7 @@ public partial struct CardInfo
     }
 
     public Sprite image => data.image;
-    public string name => data.name; // Scriptable Card name (name of the file)
+    public string name => data.cardName; // Scriptable Card name (name of the file)
     public string cost => data.cost.ToString();
     public string description => data.description;
 

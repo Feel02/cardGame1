@@ -107,9 +107,13 @@ MonoBehaviour:
   deckSize: 0
   handSize: 7
   startingDeck:
-  - card: {fileID: 11400000, guid: ce27ae6b0656c4d48a646cbb43458cda, type: 2}
+  - card: {fileID: 11400000, guid: 5d9d4adb888259243be211e455e6c1b1, type: 2}
     amount: 1
-  - card: {fileID: 11400000, guid: 66a8350e901057b4794b8abf9c82bd57, type: 2}
+  - card: {fileID: 11400000, guid: 151ce13bfa08ab6459fd13058a1aaa46, type: 2}
+    amount: 1
+  - card: {fileID: 11400000, guid: b8d842ebfb682d94eab3b8874bbc0e7b, type: 2}
+    amount: 1
+  - card: {fileID: 11400000, guid: f38d4ff7aec546b4cbd3e03b5a4f83fc, type: 2}
     amount: 1
   - card: {fileID: 11400000, guid: d611b6dc488d47144be2f5a5b723ee50, type: 2}
     amount: 1

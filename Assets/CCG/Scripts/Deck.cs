@@ -147,6 +147,13 @@ public class Deck : NetworkBehaviour
         if (isServer) RpcClearClientHand(indexes);
     }
 
+    [Command(ignoreAuthority = true)]
+    public void CmdChangeMana(int amount)
+    {
+        // Increase mana by amount. If 3, increase by 3. If -3, reduce by 3.
+        if (player.mana < player.maxMana) player.mana += amount;
+    }
+
     [Command (ignoreAuthority = true)]
     public void CmdStartNewTurn()
     {
@@ -232,12 +239,12 @@ public class Deck : NetworkBehaviour
     [Command (ignoreAuthority = true)]
     public void CmdAddCardToWallet(int index)
     {
-        String name = startingDeck[index].card.name;
+        String name = startingDeck[index].card.cardName;
         //create a namelist[] from the decklist's names
         String[] nameList = new String[deckList.Count];
         for (int i = 0; i < deckList.Count; i++)
         {
-            nameList[i] = deckList[i].name;
+            nameList[i] = deckList[i].data.cardName;
         }
         int inx = Array.IndexOf(nameList, name);
         wallet.Add(deckList[inx]);
