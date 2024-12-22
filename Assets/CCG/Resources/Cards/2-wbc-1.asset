@@ -10,17 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 992a434fee04c2f47bebd224e2fb0dee, type: 3}
-  m_Name: Duck_lvl2
+  m_Name: 2-wbc-1
   m_EditorClassIdentifier: 
-  id: 
-  image: {fileID: 21300000, guid: bac962622e35e984db74dbd202aa42d9, type: 3}
-  cost: 2
+  id: 9e27331c549ec7a6f8bbf771b50fd965
+  image: {fileID: 21300000, guid: af50fc4935360a24e81519c542dc216b, type: 3}
+  cost: 1
   category: 
+  cardName: Myeloblast
   intiatives: []
   hasInitiative: 0
-  description: Duck level2
-  strength: 3
-  health: 2
+  description: White Blood Cell Level 1
+  strength: 2
+  health: 1
   acceptableTargets: 0301
   creatureType: 
   hasCharge: 0

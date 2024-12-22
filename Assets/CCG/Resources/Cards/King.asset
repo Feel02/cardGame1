@@ -16,6 +16,7 @@ MonoBehaviour:
   image: {fileID: 21300000, guid: 2feb4117194fe924ea3fc4f523d7fc00, type: 3}
   cost: 2
   category: 
+  cardName: King
   intiatives: []
   hasInitiative: 0
   description: An ice cold, flightless king.

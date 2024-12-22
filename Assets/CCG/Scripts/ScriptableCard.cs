@@ -24,6 +24,7 @@ public partial class ScriptableCard : ScriptableObject
     [Header("Properties")]
     public int cost;
     public string category;
+    public string cardName;
 
     [Header("Initiative Abilities")]
     public List<CardAbility> intiatives = new List<CardAbility>();

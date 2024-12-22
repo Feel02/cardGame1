@@ -131,6 +131,7 @@ public class GameManager : NetworkBehaviour
     [Command(ignoreAuthority = true)]
     public void CmdAddPlayerToPlayersList(PlayerInfo player){
         if(!players.Contains(player)){
+            player.data.mana = 1;
             players.Add(player);
         }
     }
@@ -139,7 +140,7 @@ public class GameManager : NetworkBehaviour
     {
         Player player = Player.localPlayer;
         try{
-            player.mana = 1;
+            //player.mana = 1;
             player.enemyInfo.data.mana = 1;
             
             if(player.firstPlayer){

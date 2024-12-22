@@ -16,6 +16,7 @@ MonoBehaviour:
   image: {fileID: 21300000, guid: 41eed804a8a16e049bd87b0ff37fb19c, type: 3}
   cost: 9
   category: 
+  cardName: Hippo
   intiatives: []
   hasInitiative: 0
   description: Looks a lot like yo mama
