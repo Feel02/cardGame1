@@ -17,6 +17,12 @@ public class StartGameButtonScript : MonoBehaviour
     }
     public void StartGameClient()
     {
+        if(serverIp.text == ""){
+            serverIp.text = "localhost";
+        }
+        if(username.text == ""){
+            username.text = "player";
+        }
         PlayerPrefs.SetString("Name", username.text);
         PlayerPrefs.SetString("InputServerIp", serverIp.text);
         PlayerPrefs.SetInt("isClient", 0);
@@ -26,6 +32,12 @@ public class StartGameButtonScript : MonoBehaviour
 
     public void StartGameServer()
     {
+        if(serverIp.text == ""){
+            serverIp.text = "localhost";
+        }
+        if(username.text == ""){
+            username.text = "server";
+        }
         PlayerPrefs.SetString("Name", username.text);
         PlayerPrefs.SetString("InputServerIp", serverIp.text);
         PlayerPrefs.SetInt("isClient", 1);

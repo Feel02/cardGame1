@@ -19,7 +19,7 @@ MonoBehaviour:
   cardName: Erythrocytes
   intiatives: []
   hasInitiative: 0
-  description: Red Blood Cell Level 2
+  description: A mature red blood cell that carry oxygen in blood.
   strength: 2
   health: 2
   acceptableTargets: 0301

@@ -85,6 +85,12 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    public void EndTurn()
+    {
+        timer.StopTimer();
+        RpcSetTurn();
+    }
+
     // Ends our turn and starts our opponent's turn.
     [Command(ignoreAuthority = true)]
     public void CmdEndTurn()

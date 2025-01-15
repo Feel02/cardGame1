@@ -10,7 +10,17 @@ public class NetworkManagerCCG : NetworkManager
     {
         Transform startPos = GetStartPosition();
         GameObject player = Instantiate(playerPrefab);
-
         NetworkServer.AddPlayerForConnection(conn, player);
+
+        // Offline mode: Add AI player
+        if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
+        {
+            GameObject aiPlayer = Instantiate(playerPrefab);
+            NetworkServer.Spawn(aiPlayer); // Spawn without a connection
+
+            // Initialize AI Player (name, etc.)
+            aiPlayer.GetComponent<Player>().InitializeAI();
+        }
     }
+   
 }

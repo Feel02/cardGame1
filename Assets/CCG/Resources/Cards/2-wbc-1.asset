@@ -19,7 +19,7 @@ MonoBehaviour:
   cardName: Myeloblast
   intiatives: []
   hasInitiative: 0
-  description: White Blood Cell Level 1
+  description: An immature cell that forms white blood cell for securing us.
   strength: 2
   health: 1
   acceptableTargets: 0301

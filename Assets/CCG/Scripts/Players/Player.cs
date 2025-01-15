@@ -40,6 +40,21 @@ public class Player : Entity
     // We store all our enemy's info in a PlayerInfo struct so we can pass it through the network when needed.
     [HideInInspector] public static GameManager gameManager;
     [SyncVar, HideInInspector] public bool firstPlayer = false; // Is it player 1, player 2, etc.
+    [SyncVar, HideInInspector] public bool isAI = false;
+
+    public void InitializeAI()
+    {
+        username = "AI Player";
+        isAI = true;
+        hasEnemy = true;
+
+        // Disable networking components (if any) for AI
+        GetComponent<NetworkIdentity>().enabled = false;
+        if (GetComponent<NetworkTransform>() != null)
+        {
+            GetComponent<NetworkTransform>().enabled = false;
+        }
+    }
     public override void OnStartLocalPlayer()
     {
         localPlayer = this;
@@ -102,11 +117,17 @@ public class Player : Entity
         maxMana = gameManager.maxMana;
         deck.deckSize = gameManager.deckSize;
         deck.handSize = gameManager.handSize;
-        if (isServerOnly)
-        {
-            System.Random rnd = new System.Random();
-            Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
-            firstPlayer = random;
+
+        if(!isAI){
+            if (isServerOnly)
+            {
+                System.Random rnd = new System.Random();
+                Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
+                firstPlayer = random;
+            }
+        }
+        else{
+            firstPlayer = false;
         }
     }
 
@@ -124,33 +145,53 @@ public class Player : Entity
 
     public void UpdateEnemyInfo()
     {
-        // Find all Players and add them to the list.
-        Player[] onlinePlayers = FindObjectsOfType<Player>();
 
-        // Loop through all online Players (should just be one other Player)
-        foreach (Player player in onlinePlayers)
+        // Offline mode: Find AI player
+        if (!hasEnemy && PlayerPrefs.GetInt("offlineMode", 0) == 1)
         {
-            if(isServerOnly){
-                if(gameManager.players.Count == 2){
-                    gameManager.players[0].player.GetComponent<Player>().firstPlayer = firstPlayer;
-                    gameManager.players[1].player.GetComponent<Player>().firstPlayer = !firstPlayer;
+            Player[] onlinePlayers = FindObjectsOfType<Player>();
+            foreach (Player player in onlinePlayers)
+            {
+                if (player.isAI)
+                {
+                    enemyInfo = new PlayerInfo(player.gameObject);
+                    hasEnemy = true;
+                    enemyInfo.data.casterType = Target.OPPONENT;
+                    gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(this.gameObject));
+                    gameManager.StartGame(); // Start the game immediately
+                    break;
                 }
             }
-            else{
-                gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(player.gameObject));
-                if(player != null && player.username != ""){ 
-                    // Make sure the players are loaded properly (we load the usernames first)
-                    // There should only be one other Player online, so if it's not us then it's the enemy.
-                    if (player != this)
-                    {
-                        // Get & Set PlayerInfo from our Enemy's gameObject
-                        PlayerInfo currentPlayer = new PlayerInfo(player.gameObject);
-                        enemyInfo = currentPlayer;
-                        hasEnemy = true;
-                        enemyInfo.data.casterType = Target.OPPONENT;
-                        gameManager.StartGame();
+        }
+        else{
+            // Find all Players and add them to the list.
+            Player[] onlinePlayers = FindObjectsOfType<Player>();
+
+            // Loop through all online Players (should just be one other Player)
+            foreach (Player player in onlinePlayers)
+            {
+                if(isServerOnly){
+                    if(gameManager.players.Count == 2){
+                        gameManager.players[0].player.GetComponent<Player>().firstPlayer = firstPlayer;
+                        gameManager.players[1].player.GetComponent<Player>().firstPlayer = !firstPlayer;
                     }
-                } 
+                }
+                else{
+                    gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(player.gameObject));
+                    if(player != null && player.username != ""){ 
+                        // Make sure the players are loaded properly (we load the usernames first)
+                        // There should only be one other Player online, so if it's not us then it's the enemy.
+                        if (player != this)
+                        {
+                            // Get & Set PlayerInfo from our Enemy's gameObject
+                            PlayerInfo currentPlayer = new PlayerInfo(player.gameObject);
+                            enemyInfo = currentPlayer;
+                            hasEnemy = true;
+                            enemyInfo.data.casterType = Target.OPPONENT;
+                            gameManager.StartGame();
+                        }
+                    } 
+                }
             }
         }
     }
