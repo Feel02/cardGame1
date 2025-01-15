@@ -9,6 +9,7 @@ public class NetworkManagerCCG : NetworkManager
     {
         base.Start();
 
+        // Check if offline mode is enabled
         if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
         {
             // Start as host (server and client)
@@ -32,12 +33,11 @@ public class NetworkManagerCCG : NetworkManager
 
         if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
         {
-            // Add AI player
+            // Add AI player (make sure this is only done in offline mode)
             GameObject aiPlayer = Instantiate(playerPrefab);
-            NetworkServer.Spawn(aiPlayer); // Spawn without a connection
-
-            // Initialize AI Player (name, etc.)
+            NetworkServer.Spawn(aiPlayer); 
             aiPlayer.GetComponent<Player>().InitializeAI();
+            aiPlayer.SetActive(true); 
         }
     }
 }

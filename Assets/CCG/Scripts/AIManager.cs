@@ -14,7 +14,7 @@ public class AIManager : MonoBehaviour
     void Update()
     {
         // Check if it's the AI's turn and the game has started
-        if (Player.gameManager != null && !Player.gameManager.isOurTurn && aiPlayer.hasEnemy && Player.gameManager.players.Count == 2 )
+        if (Player.gameManager != null && !Player.gameManager.isOurTurn )
         {
             // Start the AI turn after a delay
             Invoke("AITurn", aiTurnDelay);
@@ -95,7 +95,6 @@ public class AIManager : MonoBehaviour
             //Debug.Log("AI has no cards to play.");
         }
     }
-
 
     void AttackWithRandomCreature()
     {

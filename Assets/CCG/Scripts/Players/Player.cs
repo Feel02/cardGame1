@@ -54,6 +54,9 @@ public class Player : Entity
         {
             GetComponent<NetworkTransform>().enabled = false;
         }
+
+        // Add AIManager component to AI player
+        gameObject.AddComponent<AIManager>();
     }
     public override void OnStartLocalPlayer()
     {

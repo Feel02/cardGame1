@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 2142132494022829688}
   m_Layer: 8
   m_Name: AI1
-  m_TagString: Player
+  m_TagString: AIPlayer
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -89,6 +89,7 @@ MonoBehaviour:
   enemyInfo:
     player: {fileID: 0}
   firstPlayer: 0
+  isAI: 0
 --- !u!114 &2970783521937405539
 MonoBehaviour:
   m_ObjectHideFlags: 0
