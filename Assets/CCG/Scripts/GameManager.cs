@@ -144,19 +144,31 @@ public class GameManager : NetworkBehaviour
 
     public void StartGame()
     {
-        Player player = Player.localPlayer;
-        try{
-            //player.mana = 1;
-            player.enemyInfo.data.mana = 1;
-            
-            if(player.firstPlayer){
-                endTurnButton.SetActive(true);
+        // Ensure StartGame runs only once
+        if (isOurTurn || turnCount > 1) return;
+
+        // Check if both players are present and initialized
+        if (players.Count == 2)
+        {
+            Player player = Player.localPlayer;
+
+            // Assign firstPlayer based on the logic in Player.Start()
+            if (player.firstPlayer)
+            {
                 isOurTurn = true;
                 isRefreshing = true;
+                endTurnButton.SetActive(true);
                 timer.StartTimer();
             }
-        } catch {
-            Debug.Log("A player trying to access somewhere they shouldn't but don't worry, I can fix her.");
+            else
+            {
+                isOurTurn = false;
+                isRefreshing = false;
+                endTurnButton.SetActive(false);
+                timer.StopTimer();
+            }
+
+            turnCount = 1; // Initialize turn count
         }
     }
 }

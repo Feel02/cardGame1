@@ -11,23 +11,6 @@ public class AIManager : MonoBehaviour
 
     public float aiTurnDelay = 2f; // Delay before AI takes its turn
 
-    void Start()
-    {
-        if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
-        {
-            // Find the AI player in the scene
-            Player[] players = FindObjectsOfType<Player>();
-            foreach (Player p in players)
-            {
-                if (p.isAI)
-                {
-                    aiPlayer = p;
-                    break;
-                }
-            }
-        }
-    }
-
     void Update()
     {
         // Check if it's the AI's turn and the game has started
@@ -49,8 +32,8 @@ public class AIManager : MonoBehaviour
         PlayRandomCardFromWallet();
 
         // 3. End Turn
-        //Player.gameManager.CmdEndTurn(); //Change this line with below one
-        Player.gameManager.EndTurn();
+        Player.gameManager.CmdEndTurn(); //Change this line with below one
+        //Player.gameManager.EndTurn();
 
         // Re-enable the script for the next AI turn
         enabled = true;
@@ -76,12 +59,10 @@ public class AIManager : MonoBehaviour
             {
                 int randomCardIndex = affordableCardIndices[UnityEngine.Random.Range(0, affordableCardIndices.Count)];
                 int cardCost = aiPlayer.deck.startingDeck[randomCardIndex].card.cost;
-                //Debug.Log("AI attempting to buy card: " + aiPlayer.deck.startingDeck[randomCardIndex].card.name);
-
-                aiPlayer.deck.CmdChangeMana(-cardCost);
-                aiPlayer.deck.CmdAddCardToWallet(randomCardIndex);
-                aiPlayer.UpdateEnemyInfo();// Add the bought card to the AI's wallet
-
+                aiPlayer.mana -= cardCost;
+                aiPlayer.deck.wallet.Add(aiPlayer.deck.deckList[randomCardIndex]);
+                //aiPlayer.deck.CmdAddCardToWallet(randomCardIndex); //Instead of this line use above one
+                aiPlayer.UpdateEnemyInfo(); 
             }
             else{
                 //Debug.Log("AI can't afford any cards.");
@@ -102,7 +83,8 @@ public class AIManager : MonoBehaviour
 
             Player.gameManager.isSpawning = true;
             Player.gameManager.isHovering = false;            
-            aiPlayer.deck.CmdPlayCard(aiPlayer.deck.wallet[randomCardIndex], randomCardIndex); // Play card from Wallet onto board
+            //aiPlayer.deck.CmdPlayCard(aiPlayer.deck.wallet[randomCardIndex], randomCardIndex); // Play card from Wallet onto board
+            aiPlayer.deck.PlayCardLocally(aiPlayer.deck.wallet[randomCardIndex], randomCardIndex);
             //Debug.Log("AI played card: " + aiPlayer.deck.wallet[randomCardIndex].name);
 
             //Attack with random creature on field

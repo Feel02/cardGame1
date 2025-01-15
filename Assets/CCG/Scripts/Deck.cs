@@ -266,4 +266,30 @@ public class Deck : NetworkBehaviour
 
         //if (isServer) RpcRemoveCardFromWallet(index);
     }
+
+    public void PlayCardLocally(CardInfo card, int index)
+    {
+        CreatureCard creature = (CreatureCard)card.data;
+        GameObject boardCard = Instantiate(creature.cardPrefab.gameObject);
+        FieldCard newCard = boardCard.GetComponent<FieldCard>();
+        newCard.card = new CardInfo(card.data); // Save Card Info so we can re-access it later if we need to.
+        newCard.cardName.text = card.name;
+        newCard.health = creature.health;
+        newCard.strength = creature.strength;
+        newCard.image.sprite = card.image;
+        newCard.image.color = Color.white;
+
+        // If creature has charge, reduce waitTurn to 0 so they can attack right away.
+        if (creature.hasCharge) newCard.waitTurn = 0;
+
+        // Update the Card Info that appears when hovering
+        newCard.cardHover.UpdateFieldCardInfo(card);
+
+        // Set card to be an enemy for the local player (since AI is the opponent)
+        newCard.casterType = Target.ENEMIES;
+        boardCard.transform.SetParent(Player.gameManager.enemyField.content, false);
+
+        // Remove the card from the AI's wallet
+        wallet.RemoveAt(index);
+    }
 }
