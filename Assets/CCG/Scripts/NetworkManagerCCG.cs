@@ -38,6 +38,8 @@ public class NetworkManagerCCG : NetworkManager
             NetworkServer.Spawn(aiPlayer); 
             aiPlayer.GetComponent<Player>().InitializeAI();
             aiPlayer.SetActive(true); 
+            AIManager aiManager = FindObjectOfType<AIManager>();
+            aiManager.aiPlayer = aiPlayer.GetComponent<Player>();
         }
     }
 }

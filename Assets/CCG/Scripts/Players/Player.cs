@@ -127,11 +127,16 @@ public class Player : Entity
         deck.deckSize = gameManager.deckSize;
         deck.handSize = gameManager.handSize;
 
-        // Offline mode: Determine first player randomly for the human player
-        if (isServer && !isAI && PlayerPrefs.GetInt("offlineMode", 0) == 1)
+        if (isServerOnly)
         {
             System.Random rnd = new System.Random();
-            firstPlayer = rnd.NextDouble() <= 0.5;
+            Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
+            firstPlayer = random;
+        }
+        // Offline mode: Determine first player randomly for the human player
+        else if (isServer && !isAI && PlayerPrefs.GetInt("offlineMode", 0) == 1)
+        {
+            firstPlayer = true;
         }
         // Ensure AI is never the first player in offline mode
         else if (isAI)
@@ -162,33 +167,28 @@ public class Player : Entity
         // Loop through all online Players (should just be one other Player)
         foreach (Player player in onlinePlayers)
         {
-            if (isServerOnly)
-            {
-                if (gameManager.players.Count == 2)
-                {
+            if(isServerOnly){
+                if(gameManager.players.Count == 2){
                     gameManager.players[0].player.GetComponent<Player>().firstPlayer = firstPlayer;
                     gameManager.players[1].player.GetComponent<Player>().firstPlayer = !firstPlayer;
                 }
             }
             else
             {
-                if (player != null && player.username != "" && player != this)
-                {
-                    gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(player.gameObject));
-                }
+                gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(player.gameObject));
                 if(player != null && player.username != ""){ 
                     // Make sure the players are loaded properly (we load the usernames first)
                     // There should only be one other Player online, so if it's not us then it's the enemy.
-                    if(player != this && player.isAI){
+                    if (player != this)
+                    {
                         // Get & Set PlayerInfo from our Enemy's gameObject
                         PlayerInfo currentPlayer = new PlayerInfo(player.gameObject);
                         enemyInfo = currentPlayer;
                         hasEnemy = true;
                         enemyInfo.data.casterType = Target.OPPONENT;
-                        if(PlayerPrefs.GetInt("offlineMode", 0) == 1 && hasEnemy && enemyInfo.data.isAI)
-                            gameManager.StartGame();
+                        gameManager.StartGame();
                     }
-                } 
+                }
             }
         }
     }

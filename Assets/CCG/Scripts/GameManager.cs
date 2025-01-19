@@ -122,13 +122,6 @@ public class GameManager : NetworkBehaviour
     }    
 
     [Command(ignoreAuthority = true)]
-    public void CmdChangeFirstPlayer(bool firstPlayer)
-    {
-        players[0].player.GetComponent<Player>().ChangeFirstPlayer(firstPlayer);
-        players[1].player.GetComponent<Player>().ChangeFirstPlayer(!firstPlayer);
-    }
-
-    [Command(ignoreAuthority = true)]
     public void CmdAddPlayerToPlayersList(PlayerInfo player){
         if(!players.Contains(player)){
             player.data.mana = 1;
@@ -143,9 +136,6 @@ public class GameManager : NetworkBehaviour
     }
     public void StartGame()
     {
-        // Ensure StartGame runs only once
-        if (isOurTurn || turnCount > 1) return;
-
         // Check if both players are present and initialized
         if (players.Count == 2)
         {

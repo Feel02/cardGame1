@@ -26,6 +26,7 @@ public class StartGameButtonScript : MonoBehaviour
         PlayerPrefs.SetString("Name", username.text);
         PlayerPrefs.SetString("InputServerIp", serverIp.text);
         PlayerPrefs.SetInt("isClient", 0);
+        PlayerPrefs.SetInt("offlineMode", 0);
 
         UnityEngine.SceneManagement.SceneManager.LoadScene(1, UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
@@ -41,6 +42,7 @@ public class StartGameButtonScript : MonoBehaviour
         PlayerPrefs.SetString("Name", username.text);
         PlayerPrefs.SetString("InputServerIp", serverIp.text);
         PlayerPrefs.SetInt("isClient", 1);
+        PlayerPrefs.SetInt("offlineMode", 0);
 
         UnityEngine.SceneManagement.SceneManager.LoadScene(1, UnityEngine.SceneManagement.LoadSceneMode.Single);
     }

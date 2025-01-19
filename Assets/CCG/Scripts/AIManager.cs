@@ -25,6 +25,8 @@ public class AIManager : MonoBehaviour
 
     void AITurn()
     {
+        aiPlayer.mana += 1;
+
         // 1. Buy Cards (if possible)
         BuyAffordableCards();
 
@@ -58,9 +60,9 @@ public class AIManager : MonoBehaviour
             if (affordableCardIndices.Count > 0)
             {
                 int randomCardIndex = affordableCardIndices[UnityEngine.Random.Range(0, affordableCardIndices.Count)];
-                int cardCost = aiPlayer.deck.startingDeck[randomCardIndex].card.cost;
+                int cardCost = Player.localPlayer.deck.startingDeck[randomCardIndex].card.cost;
                 aiPlayer.mana -= cardCost;
-                aiPlayer.deck.wallet.Add(aiPlayer.deck.deckList[randomCardIndex]);
+                aiPlayer.deck.wallet.Add(Player.localPlayer.deck.deckList[randomCardIndex]);
                 //aiPlayer.deck.CmdAddCardToWallet(randomCardIndex); //Instead of this line use above one
                 aiPlayer.UpdateEnemyInfo(); 
             }
