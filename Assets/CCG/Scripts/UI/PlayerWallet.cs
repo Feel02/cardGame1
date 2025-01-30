@@ -100,6 +100,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
                     RemoveCard(i);
                     player.deck.CmdRemoveCardFromWallet(walletContent.childCount - 2);
                     player.deck.CmdRemoveCardFromWallet(i);
+                     player.deck.CmdUpdatePlayerHand();
                     return;
                 }
                 else if(Array.IndexOf(startDeck, card.data) == 2){
@@ -108,10 +109,12 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
                     RemoveCard(i);
                     player.deck.CmdRemoveCardFromWallet(walletContent.childCount - 2);
                     player.deck.CmdRemoveCardFromWallet(i);
+                    player.deck.CmdUpdatePlayerHand();
                     return;
                 }
             }
         }
+         player.deck.CmdUpdatePlayerHand();
     }
 
     public void AddCard(int index)
@@ -151,4 +154,16 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
 
     bool IsEnemyHand() => player && player.hasEnemy && playerType == PlayerType.ENEMY && enemyInfo.handCount != cardCount;
     bool IsPlayerHand() => player && player.deck.spawnInitialCards && playerType == PlayerType.PLAYER;
+     public void UpdateWalletUI()
+    {
+         if(player && player.hasEnemy){
+             cardCount = enemyInfo.walletCount;
+           UIUtils.BalancePrefabs(cardPrefab.gameObject, enemyInfo.walletCount, walletContent);
+             for (int i = 0; i < enemyInfo.walletCount; ++i)
+            {
+                HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
+                slot.AddCardBack();
+            }
+        }
+    }
 }

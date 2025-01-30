@@ -4,22 +4,64 @@ using Mirror;
 using System.Linq;
 using System;
 
-// Add this component to a GameObject in your scene
 public class AIManager : MonoBehaviour
 {
     public Player aiPlayer;
+    public float aiTurnDelay = 2f;
+    private bool aiInitialized = false;
 
-    public float aiTurnDelay = 2f; // Delay before AI takes its turn
 
     void Update()
     {
-        // Check if it's the AI's turn and the game has started
-        if (Player.gameManager != null && !Player.gameManager.isOurTurn )
+        if (Player.gameManager != null && !Player.gameManager.isOurTurn)
         {
-            // Start the AI turn after a delay
+           if(!aiInitialized){
+                InitializeAI();
+           }
+
             Invoke("AITurn", aiTurnDelay);
-            // Ensure the AI only takes one turn per player turn
-            enabled = false; 
+            enabled = false;
+        }
+    }
+
+    void InitializeAI()
+    {
+        // Fill deck from startingDeck array
+        for (int i = 0; i < aiPlayer.deck.startingDeck.Length; ++i)
+        {
+            CardAndAmount card = aiPlayer.deck.startingDeck[i];
+            CreatureCard creature = (CreatureCard)card.card;
+            for (int v = 0; v < creature.amount; v++)                     //card.amount instead of 3
+            {
+                aiPlayer.deck.deckList.Add(card.amount > 0 ? new CardInfo(card.card, 1) : new CardInfo());
+            }
+            if (aiPlayer.deck.hand.Count < 3) aiPlayer.deck.hand.Add(new CardInfo(card.card, 1));
+        }
+        if (aiPlayer.deck.hand.Count == 3)
+        {
+            aiPlayer.deck.hand.Shuffle();
+        }
+
+        DrawInitialHand();
+        aiInitialized = true;
+    }
+
+    void DrawInitialHand()
+    {
+       
+        int[] indexes = new int[3];
+
+        for (int i = 0; i < 3; i++)
+        {
+            indexes[i] = UnityEngine.Random.Range(0, aiPlayer.deck.deckList.Count);
+        }
+
+        if (aiPlayer.deck.hand.Count != 0)
+            aiPlayer.deck.hand.Clear();
+
+        for (int i = 0; i < 3; i++)
+        {
+            aiPlayer.deck.hand.Add(aiPlayer.deck.deckList[indexes[i]]);
         }
     }
 
@@ -27,91 +69,89 @@ public class AIManager : MonoBehaviour
     {
         aiPlayer.mana += 1;
 
-        // 1. Buy Cards (if possible)
-        BuyAffordableCards();
+        // 1. Restart hand
+        int[] indexes = new int[3];
+        aiPlayer.deck.RestartHand(indexes);
+        aiPlayer.deck.CmdUpdateAIHand();
 
-        // 2. Play Cards Randomly (if possible)
-        PlayRandomCardFromWallet();
+        // 2. Buy and Play Cards from Wallet
+        BuyAndPlayCards();
 
         // 3. End Turn
-        Player.gameManager.CmdEndTurn(); //Change this line with below one
-        //Player.gameManager.EndTurn();
-
-        // Re-enable the script for the next AI turn
+        Player.gameManager.CmdEndTurn();
         enabled = true;
     }
 
-
-
-    void BuyAffordableCards()
+   void BuyAndPlayCards()
     {
-        //Debug.Log("AI buying cards...");
-        if (aiPlayer.deck.wallet.Count < 6)                                            //Added if statement
+        while (aiPlayer.deck.wallet.Count < 6)
         {
-            List<int> affordableCardIndices = new List<int>();
-            for (int i = 0; i < aiPlayer.deck.startingDeck.Length; i++)
-            {
-                if (aiPlayer.deck.startingDeck[i].card.cost <= aiPlayer.mana)
-                {
-                    affordableCardIndices.Add(i);
-                }
-            }
-
-            if (affordableCardIndices.Count > 0)
-            {
-                int randomCardIndex = affordableCardIndices[UnityEngine.Random.Range(0, affordableCardIndices.Count)];
-                int cardCost = Player.localPlayer.deck.startingDeck[randomCardIndex].card.cost;
-                aiPlayer.mana -= cardCost;
-                aiPlayer.deck.wallet.Add(Player.localPlayer.deck.deckList[randomCardIndex]);
-                //aiPlayer.deck.CmdAddCardToWallet(randomCardIndex); //Instead of this line use above one
-                aiPlayer.UpdateEnemyInfo(); 
-            }
-            else{
-                //Debug.Log("AI can't afford any cards.");
-            }
+            bool cardBoughtAndPlayed = BuyAndPlayCard();
+            if(!cardBoughtAndPlayed) break; //if it cannot buy the card stop trying
+            if(UnityEngine.Random.Range(0, 10) < 2) PlayRandomCardFromWallet();
         }
+
+        if(UnityEngine.Random.Range(0, 10) < 5) PlayRandomCardFromWallet();
     }
 
-
-
-    void PlayRandomCardFromWallet()
+    bool BuyAndPlayCard()
     {
-        //Debug.Log("AI playing cards...");
+
+        List<int> affordableCardIndices = new List<int>();
+
+        for (int i = 0; i < aiPlayer.deck.hand.Count; i++)
+        {
+            if (aiPlayer.deck.hand[i].cost.ToInt() <= aiPlayer.mana)
+            {
+                affordableCardIndices.Add(i);
+            }
+        }
+
+        foreach(int index in affordableCardIndices)
+        {
+            int cardCost = aiPlayer.deck.hand[index].cost.ToInt();
+            // Check if the AI can afford the card
+            if (aiPlayer.mana >= cardCost)
+            {
+                aiPlayer.mana -= cardCost;
+
+                aiPlayer.deck.wallet.Add(aiPlayer.deck.hand[index]);
+                //AI must remove the card from the hand, the player must see it
+                aiPlayer.deck.hand.RemoveAt(index);
+                aiPlayer.UpdateEnemyInfo(); // Ensure UI updates
+                aiPlayer.deck.CmdUpdateAIBoughtCard(); // Updates Player's wallet to show card has moved.
+                return true;
+            }
+        }
+        return false; // No card can be bought and played
+    }
+
+   void PlayRandomCardFromWallet()
+    {
         if (aiPlayer.deck.wallet.Count > 0)
         {
-
             int randomCardIndex = UnityEngine.Random.Range(0, aiPlayer.deck.wallet.Count);
-            //Debug.Log("AI attempting to play card: " + aiPlayer.deck.wallet[randomCardIndex].name);
 
             Player.gameManager.isSpawning = true;
-            Player.gameManager.isHovering = false;            
-            //aiPlayer.deck.CmdPlayCard(aiPlayer.deck.wallet[randomCardIndex], randomCardIndex); // Play card from Wallet onto board
+            Player.gameManager.isHovering = false;
             aiPlayer.deck.PlayCardLocally(aiPlayer.deck.wallet[randomCardIndex], randomCardIndex);
-            //Debug.Log("AI played card: " + aiPlayer.deck.wallet[randomCardIndex].name);
 
             //Attack with random creature on field
             AttackWithRandomCreature();
+        }
 
-        }
-        else{
-            //Debug.Log("AI has no cards to play.");
-        }
     }
 
     void AttackWithRandomCreature()
     {
-        //Debug.Log("AI attacking with creature...");
-        // Find all AI creatures on the field
         FieldCard[] aiCreatures = FindObjectsOfType<FieldCard>().Where(c => c.casterType == Target.ENEMIES && c.CanAttack()).ToArray();
 
         if (aiCreatures.Length > 0)
         {
-            // Choose a random creature to attack with
             FieldCard attacker = aiCreatures[UnityEngine.Random.Range(0, aiCreatures.Length)];
 
-            // Find a random target (opponent or enemy creature)
             List<Entity> potentialTargets = new List<Entity>();
-            potentialTargets.Add(Player.localPlayer); // Add the player as a potential target
+            potentialTargets.Add(Player.localPlayer);
             potentialTargets.AddRange(FindObjectsOfType<FieldCard>().Where(c => c.casterType == Target.FRIENDLIES));
 
             if (potentialTargets.Count > 0)
@@ -120,12 +160,8 @@ public class AIManager : MonoBehaviour
 
                 bool canTarget = target.casterType.CanTarget(attacker.card.acceptableTargets);
                 if (canTarget)
-                    // Attack the target
                     ((CreatureCard)attacker.card.data).Attack(attacker, target);
             }
-        }
-        else{
-            //Debug.Log("AI has no creatures to attack with.");
         }
     }
 }

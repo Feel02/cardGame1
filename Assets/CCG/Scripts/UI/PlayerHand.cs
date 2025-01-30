@@ -78,4 +78,18 @@ public class PlayerHand : MonoBehaviour
 
     bool IsEnemyHand() => player && player.hasEnemy && player.deck.hand.Count == 3 && playerType == PlayerType.ENEMY && enemyInfo.handCount != cardCount;
     bool IsPlayerHand() => player && player.deck.spawnInitialCards && playerType == PlayerType.PLAYER;
+
+     public void UpdateHandUI()
+    {
+         if(player && player.hasEnemy){
+           cardCount = enemyInfo.handCount;
+           UIUtils.BalancePrefabs(cardPrefab.gameObject, enemyInfo.handCount, handContent);
+
+            for (int i = 0; i < enemyInfo.handCount; ++i)
+            {
+                HandCard slot = handContent.GetChild(i).GetComponent<HandCard>();
+                slot.AddCardBack();
+            }
+        }
+    }
 }
