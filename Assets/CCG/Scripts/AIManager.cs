@@ -160,21 +160,18 @@ public class AIManager : MonoBehaviour
         if (aiCreatures.Length > 0)
         {
             FieldCard attacker;
-            for(int i = 0; i < aiCreatures.Length; i++)
+            attacker = aiCreatures[UnityEngine.Random.Range(0, aiCreatures.Length)];
+            List<Entity> potentialTargets = new List<Entity>();
+            potentialTargets.Add(Player.localPlayer);
+            potentialTargets.AddRange(GameObject.Find("PlayerFieldContent").GetComponent<Transform>().GetComponentsInChildren<FieldCard>());
+
+            if (potentialTargets.Count > 0)
             {
-                attacker = aiCreatures[i];
-                List<Entity> potentialTargets = new List<Entity>();
-                potentialTargets.Add(Player.localPlayer);
-                potentialTargets.AddRange(GameObject.Find("PlayerFieldContent").GetComponent<Transform>().GetComponentsInChildren<FieldCard>());
+                Entity target = potentialTargets[UnityEngine.Random.Range(0, potentialTargets.Count)];
 
-                if (potentialTargets.Count > 0)
-                {
-                    Entity target = potentialTargets[UnityEngine.Random.Range(0, potentialTargets.Count)];
-
-                    /* bool canTarget = target.casterType.CanTarget(attacker.card.acceptableTargets);
-                    if (canTarget) */
-                        ((CreatureCard)attacker.card.data).Attack(attacker, target);
-                }
+                /* bool canTarget = target.casterType.CanTarget(attacker.card.acceptableTargets);
+                if (canTarget) */
+                ((CreatureCard)attacker.card.data).Attack(attacker, target);
             }
         }
     }

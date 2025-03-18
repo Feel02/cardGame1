@@ -26,17 +26,23 @@ public class Combat : NetworkBehaviour
         // Increase health by amount. If 3, increase by 3. If -3, reduce by 3.
 
         if (PlayerPrefs.GetInt("offlineMode", 0) == 1){
-             entity.health += amount;
+             //entity.health += amount;
         
              if (entity.health <= 0){
                 entity.RpcDie();
              }
+             else{
+                entity.health += amount; 
+             }
          }
          else
          {
-            entity.health += amount;
+            //entity.health += amount;
             if (entity.health <= 0){
                entity.RpcDie();
+            }
+            else{
+                entity.health += amount; 
             }
          }
     }
