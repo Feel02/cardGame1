@@ -9,16 +9,19 @@ public class EndGameButtonScript : MonoBehaviour
     public Text endGameText;
     public void Start()
     {
-        int playerScore  =  PlayerPrefs.GetInt("playerHealth");
-            
-        if (playerScore > 0)
+        int isPlayerWinner = PlayerPrefs.GetInt("isPlayerWinner", -1);
+        
+        if (isPlayerWinner == 1)
         {
             endGameText.text = "You Win!";
         }
-        //if the player is the loser
-        else
+        else if (isPlayerWinner == 0)
         {
             endGameText.text = "You Lose!";
+        }
+        else
+        {
+            endGameText.text = "Game Over!";
         }
     }
 

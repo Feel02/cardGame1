@@ -54,31 +54,22 @@ public abstract partial class Entity : NetworkBehaviour
         if (isLocalPlayer)
         {
             Debug.Log("Local player died. Loading end game scene.");
-            if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
-            {
-                Debug.Log("Offline mode: Destroying game object.");
-                Destroy(gameObject);
-            }
-            else
-            {
-                Debug.Log("Online mode: Stopping host and destroying network manager.");
-                NetworkManager.singleton.StopHost();
-                Destroy(NetworkManager.singleton.gameObject);
-            }
-            UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
+            // Player lost: set flag to 0
+            PlayerPrefs.SetInt("isPlayerWinner", 0);
+            // Rest of the existing code...
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
         }
         else
         {
             Debug.Log("Remote player died. Doing nothing.");
-            //Only destroy the GO if it's not the localPlayer in online mode
-            if(PlayerPrefs.GetInt("offlineMode", 0) == 1){
+            if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
+            {
                 // Check if this entity is the AI player
                 Player player = GetComponent<Player>();
                 if (player != null && player.isAI)
                 {
-                    // Save the player's health to determine win/lose
-                    PlayerPrefs.SetInt("playerHealth", Player.localPlayer.health);
-                    // Load the end scene
+                    // AI died: player wins (set flag to 1)
+                    PlayerPrefs.SetInt("isPlayerWinner", 1);
                     UnityEngine.SceneManagement.SceneManager.LoadScene(2);
                 }
                 Destroy(gameObject);
