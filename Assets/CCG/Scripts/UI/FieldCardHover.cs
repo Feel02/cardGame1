@@ -32,7 +32,7 @@ public class FieldCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         card.cardHover.gameObject.SetActive(false);
 
         // Turn off Shine/Glow border
-        Player.gameManager.CmdOnFieldCardHover(this.gameObject, false, false);
+        //Player.gameManager.CmdOnFieldCardHover(this.gameObject, false, false);
 
         Player.gameManager.isHoveringField = false;
     }
@@ -48,7 +48,7 @@ public class FieldCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             if (Player.gameManager.isOurTurn)
             {
                 Player.gameManager.isHoveringField = true;
-                Player.gameManager.CmdOnFieldCardHover(this.gameObject, true, Player.localPlayer.isTargeting);
+                //Player.gameManager.CmdOnFieldCardHover(this.gameObject, true, Player.localPlayer.isTargeting);
             }
         }
     }

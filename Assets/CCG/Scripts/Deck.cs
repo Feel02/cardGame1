@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿ using UnityEngine;
 using Mirror;
 using System;
 using System.Linq;
@@ -106,21 +106,11 @@ public class Deck : NetworkBehaviour
     [ClientRpc]
     public void RpcPlayCardField(GameObject boardCard, int index)
     {
-        if (Player.gameManager.isSpawning)
-        {
-            // Set our FieldCard as a FRIENDLY creature for our local player, and ENEMY for our opponent.
-            boardCard.GetComponent<FieldCard>().casterType = Target.FRIENDLIES;
-            boardCard.transform.SetParent(Player.gameManager.playerField.content, false);
-            Player.gameManager.playerWallet.RemoveCard(index); // Update player's wallet
-            Player.gameManager.isSpawning = false;
-            
-        }
-        else if (player.hasEnemy)
-        {
-            boardCard.GetComponent<FieldCard>().casterType = Target.ENEMIES;
-            boardCard.transform.SetParent(Player.gameManager.enemyField.content, false);
-            //Player.gameManager.enemyWallet.RemoveCard(index);
-        }
+        // Set our FieldCard as a FRIENDLY creature for our local player, and ENEMY for our opponent.
+        boardCard.GetComponent<FieldCard>().casterType = Player.gameManager.isOurTurn ? Target.FRIENDLIES : Target.ENEMIES;
+        boardCard.transform.SetParent(Player.gameManager.isOurTurn ? Player.gameManager.playerField.content : Player.gameManager.enemyField.content, false);
+        if(Player.gameManager.isOurTurn) Player.gameManager.playerWallet.RemoveCard(index); // Update player's wallet
+        //else //Player.gameManager.enemyWallet.RemoveCard(index);
     }
 
     public void RestartHand(int[] indexes){
@@ -252,7 +242,7 @@ public class Deck : NetworkBehaviour
         newCard.cardHover.UpdateFieldCardInfo(card);
 
         // Set card to be an enemy for the local player (since AI is the opponent)
-        newCard.casterType = Target.ENEMIES;
+        boardCard.GetComponent<FieldCard>().casterType = Target.ENEMIES;
         boardCard.transform.SetParent(Player.gameManager.enemyField.content, false);
 
         // Remove the card from the AI's wallet
@@ -281,12 +271,9 @@ public class Deck : NetworkBehaviour
     [ClientRpc]
     void RpcUpdatePlayerHand()
     {
-        if(player.hasEnemy){
+       if(Player.localPlayer.firstPlayer == player.firstPlayer){
             Player.gameManager.playerHand.UpdateHandUI();
-        }
-        else {
-            Player.gameManager.playerHand.UpdateHandUI();
-        }
+       }
     }
     
     [Command (ignoreAuthority = true)]

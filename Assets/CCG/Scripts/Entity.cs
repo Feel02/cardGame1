@@ -48,12 +48,20 @@ public abstract partial class Entity : NetworkBehaviour
     [ClientRpc]
     public void RpcDie()
     {
-        PlayerPrefs.SetInt("playerHealth", Player.localPlayer.combat.entity.health);
-        if(!Player.gameManager.isOurTurn) PlayerPrefs.SetInt("playerHealth", -1);
-        NetworkManager.singleton.StopHost();
-        Destroy(NetworkManager.singleton.gameObject);
-        Destroy(gameObject);
-        UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
+         PlayerPrefs.SetInt("playerHealth", Player.localPlayer.combat.entity.health);
+        if (PlayerPrefs.GetInt("offlineMode", 0) == 1){
+            if(!Player.gameManager.isOurTurn) PlayerPrefs.SetInt("playerHealth", -1);
+            Destroy(gameObject);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
+        else
+        {
+            if(!Player.gameManager.isOurTurn) PlayerPrefs.SetInt("playerHealth", -1);
+             NetworkManager.singleton.StopHost();
+            Destroy(NetworkManager.singleton.gameObject);
+            Destroy(gameObject);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
     }
 
     public void DestroyTargetingArrow()

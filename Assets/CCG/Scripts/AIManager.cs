@@ -77,6 +77,9 @@ public class AIManager : MonoBehaviour
         // 2. Buy and Play Cards from Wallet
         BuyAndPlayCards();
 
+        //Attack with random creature on field
+        AttackWithRandomCreature();
+
         // 3. End Turn
         Player.gameManager.CmdEndTurn();
         enabled = true;
@@ -84,14 +87,17 @@ public class AIManager : MonoBehaviour
 
    void BuyAndPlayCards()
     {
-        while (aiPlayer.deck.wallet.Count < 6)
+        bool isItNewCard = false;
+        if(aiPlayer.deck.wallet.Count < 6)
         {
             bool cardBoughtAndPlayed = BuyAndPlayCard();
-            if(!cardBoughtAndPlayed) break; //if it cannot buy the card stop trying
+            isItNewCard = cardBoughtAndPlayed;
             if(UnityEngine.Random.Range(0, 10) < 2) PlayRandomCardFromWallet();
         }
 
-        if(UnityEngine.Random.Range(0, 10) < 5) PlayRandomCardFromWallet();
+        if(!isItNewCard)
+            if(UnityEngine.Random.Range(0, 10) < 5) 
+                PlayRandomCardFromWallet();
     }
 
     bool BuyAndPlayCard()
@@ -109,6 +115,8 @@ public class AIManager : MonoBehaviour
 
         foreach(int index in affordableCardIndices)
         {
+            if(aiPlayer.deck.wallet.Count == 6) continue;
+
             int cardCost = aiPlayer.deck.hand[index].cost.ToInt();
             // Check if the AI can afford the card
             if (aiPlayer.mana >= cardCost)
@@ -134,33 +142,39 @@ public class AIManager : MonoBehaviour
 
             Player.gameManager.isSpawning = true;
             Player.gameManager.isHovering = false;
-            aiPlayer.deck.PlayCardLocally(aiPlayer.deck.wallet[randomCardIndex], randomCardIndex);
+            //aiPlayer.deck.PlayCardLocally(aiPlayer.deck.wallet[randomCardIndex], randomCardIndex);
+            aiPlayer.deck.CmdPlayCard(aiPlayer.deck.wallet[randomCardIndex], randomCardIndex);
 
-            //Attack with random creature on field
-            AttackWithRandomCreature();
+            aiPlayer.deck.playerField.Clear();
+            //get the field cards from the component named as EnemyFieldContent
+            FieldCard[] fieldcards = GameObject.Find("EnemyFieldContent").GetComponent<Transform>().GetComponentsInChildren<FieldCard>();
+            aiPlayer.deck.playerField.AddRange(fieldcards.Select(fc => new CardInfo(fc.card.data, 1)));
         }
 
     }
 
     void AttackWithRandomCreature()
     {
-        FieldCard[] aiCreatures = FindObjectsOfType<FieldCard>().Where(c => c.casterType == Target.ENEMIES && c.CanAttack()).ToArray();
+        FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponent<Transform>().GetComponentsInChildren<FieldCard>();
 
         if (aiCreatures.Length > 0)
         {
-            FieldCard attacker = aiCreatures[UnityEngine.Random.Range(0, aiCreatures.Length)];
-
-            List<Entity> potentialTargets = new List<Entity>();
-            potentialTargets.Add(Player.localPlayer);
-            potentialTargets.AddRange(FindObjectsOfType<FieldCard>().Where(c => c.casterType == Target.FRIENDLIES));
-
-            if (potentialTargets.Count > 0)
+            FieldCard attacker;
+            for(int i = 0; i < aiCreatures.Length; i++)
             {
-                Entity target = potentialTargets[UnityEngine.Random.Range(0, potentialTargets.Count)];
+                attacker = aiCreatures[i];
+                List<Entity> potentialTargets = new List<Entity>();
+                potentialTargets.Add(Player.localPlayer);
+                potentialTargets.AddRange(GameObject.Find("PlayerFieldContent").GetComponent<Transform>().GetComponentsInChildren<FieldCard>());
 
-                bool canTarget = target.casterType.CanTarget(attacker.card.acceptableTargets);
-                if (canTarget)
-                    ((CreatureCard)attacker.card.data).Attack(attacker, target);
+                if (potentialTargets.Count > 0)
+                {
+                    Entity target = potentialTargets[UnityEngine.Random.Range(0, potentialTargets.Count)];
+
+                    /* bool canTarget = target.casterType.CanTarget(attacker.card.acceptableTargets);
+                    if (canTarget) */
+                        ((CreatureCard)attacker.card.data).Attack(attacker, target);
+                }
             }
         }
     }

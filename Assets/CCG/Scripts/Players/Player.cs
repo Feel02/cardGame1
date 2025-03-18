@@ -48,11 +48,10 @@ public class Player : Entity
         isAI = true;
         hasEnemy = true;
 
-        // Disable networking components (if any) for AI
-        GetComponent<NetworkIdentity>().enabled = false;
+        //GetComponent<NetworkIdentity>().enabled = false;      ??????????????????????
         if (GetComponent<NetworkTransform>() != null)
         {
-            GetComponent<NetworkTransform>().enabled = false;
+            //GetComponent<NetworkTransform>().enabled = false; ?????????????????????**
         }
 
         // Add AIManager component to AI player
