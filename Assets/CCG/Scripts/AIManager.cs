@@ -13,11 +13,19 @@ public class AIManager : MonoBehaviour
 
     void Update()
     {
+        // Check if aiPlayer is null or destroyed to prevent MissingReferenceException
+        if (aiPlayer == null || aiPlayer.gameObject == null)
+        {
+            enabled = false;
+            return;
+        }
+
         if (Player.gameManager != null && !Player.gameManager.isOurTurn)
         {
-           if(!aiInitialized){
+            if (!aiInitialized)
+            {
                 InitializeAI();
-           }
+            }
 
             Invoke("AITurn", aiTurnDelay);
             enabled = false;
@@ -67,6 +75,12 @@ public class AIManager : MonoBehaviour
 
     void AITurn()
     {
+        // Check again if aiPlayer is null before proceeding
+        if (aiPlayer == null || aiPlayer.gameObject == null)
+        {
+            enabled = false;
+            return;
+        }
         aiPlayer.mana += 1;
 
         // 1. Restart hand

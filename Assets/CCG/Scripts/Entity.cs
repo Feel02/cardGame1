@@ -72,8 +72,17 @@ public abstract partial class Entity : NetworkBehaviour
             Debug.Log("Remote player died. Doing nothing.");
             //Only destroy the GO if it's not the localPlayer in online mode
             if(PlayerPrefs.GetInt("offlineMode", 0) == 1){
+                // Check if this entity is the AI player
+                Player player = GetComponent<Player>();
+                if (player != null && player.isAI)
+                {
+                    // Save the player's health to determine win/lose
+                    PlayerPrefs.SetInt("playerHealth", Player.localPlayer.health);
+                    // Load the end scene
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+                }
                 Destroy(gameObject);
-        }
+            }
         }
     }
 

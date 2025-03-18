@@ -197,6 +197,18 @@ public class Player : Entity
         firstPlayer = v;
     }
 
+    void OnDestroy()
+{
+    if (isAI)
+    {
+        AIManager aiManager = FindObjectOfType<AIManager>();
+        if (aiManager != null)
+        {
+            aiManager.aiPlayer = null;
+        }
+    }
+}
+
     public bool IsOurTurn() => gameManager.isOurTurn;               
     public bool IsRefresh() => gameManager.isRefreshing;
 }
