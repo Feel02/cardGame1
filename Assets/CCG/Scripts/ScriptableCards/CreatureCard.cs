@@ -34,8 +34,28 @@ public partial class CreatureCard : ScriptableCard
     public virtual void Attack(Entity attacker, Entity target)
     {
         // Reduce the target's health by damage dealt.
-        target.combat.CmdChangeHealth(-attacker.strength);
+        /* target.combat.CmdChangeHealth(-attacker.strength);
+        if(target.IsDead()) return;
         attacker.combat.CmdChangeHealth(-target.strength);
+        if(attacker.IsDead()) return;
+        attacker.DestroyTargetingArrow();
+        attacker.combat.CmdIncreaseWaitTurn(); */
+
+        // Reduce the target's health by damage dealt.
+        target.combat.CmdChangeHealth(-attacker.strength);
+
+        // Reduce the attacker's health by the target's strength
+        attacker.combat.CmdChangeHealth(-target.strength);
+
+        // Check if the target died
+        if (target.IsDead()) {
+            Debug.Log("Target died!");
+        }
+        // Check if the attacker died
+        if (attacker.IsDead()) {
+            Debug.Log("Attacker died!");
+        }
+
         attacker.DestroyTargetingArrow();
         attacker.combat.CmdIncreaseWaitTurn();
     }

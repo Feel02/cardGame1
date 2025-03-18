@@ -45,35 +45,45 @@ public abstract partial class Entity : NetworkBehaviour
         arrowObject.GetComponent<TargetingArrow>().DrawLine(this, card, spawnPos, IsAbility);
     }
 
+    // Scripts/Entity.cs
     [ClientRpc]
     public void RpcDie()
     {
-         PlayerPrefs.SetInt("playerHealth", Player.localPlayer.combat.entity.health);
-        if (PlayerPrefs.GetInt("offlineMode", 0) == 1){
-            if(!Player.gameManager.isOurTurn) PlayerPrefs.SetInt("playerHealth", -1);
-            Destroy(gameObject);
-            
-            if(isLocalPlayer) UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        Debug.Log("RpcDie called on " + gameObject.name);
+
+        if (isLocalPlayer)
+        {
+            Debug.Log("Local player died. Loading end game scene.");
+            if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
+            {
+                Debug.Log("Offline mode: Destroying game object.");
+                Destroy(gameObject);
+            }
+            else
+            {
+                Debug.Log("Online mode: Stopping host and destroying network manager.");
+                NetworkManager.singleton.StopHost();
+                Destroy(NetworkManager.singleton.gameObject);
+            }
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
         }
         else
         {
-            if(!Player.gameManager.isOurTurn) PlayerPrefs.SetInt("playerHealth", -1);
-            
-            if(isLocalPlayer){
-                NetworkManager.singleton.StopHost();
-                Destroy(NetworkManager.singleton.gameObject);
-                //Destroy(gameObject);
-                UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
-            }
+            Debug.Log("Remote player died. Doing nothing.");
+            //Only destroy the GO if it's not the localPlayer in online mode
+            if(PlayerPrefs.GetInt("offlineMode", 0) == 1){
+                Destroy(gameObject);
+        }
         }
     }
 
-    public void DestroyTargetingArrow()
+    public virtual void DestroyTargetingArrow()
     {
         Player.localPlayer.isTargeting = false;
         isTargeting = false;
         Cursor.visible = true;
-        Destroy(arrowObject);
+        if(arrowObject != null) Destroy(arrowObject);
+        //Destroy(arrowObject);
     }
 
     public virtual void Update()

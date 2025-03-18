@@ -117,13 +117,15 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     public void RpcTakeDamageToSelf(int amount)
     {
-        if(isOurTurn)
+        //if(isOurTurn)
+        if(isOurTurn && Player.localPlayer != null)
             Player.localPlayer.combat.CmdChangeHealth(-amount);
     }    
 
     [Command(ignoreAuthority = true)]
     public void CmdAddPlayerToPlayersList(PlayerInfo player){
-        if(!players.Contains(player)){
+        //if(!players.Contains(player))
+        if(!players.Any(p => p.player == player.player)){
             player.data.mana = 1;
             players.Add(player);
         }
