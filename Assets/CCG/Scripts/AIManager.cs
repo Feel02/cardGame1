@@ -10,6 +10,15 @@ public class AIManager : MonoBehaviour
     public float aiTurnDelay = 2f;
     private bool aiInitialized = false;
 
+    void Start()
+    {
+        aiPlayer = GetComponent<Player>();
+        if (aiPlayer == null)
+        {
+            Debug.LogError("AIManager: Player component missing!");
+            enabled = false;
+        }
+    }
 
     void Update()
     {
@@ -106,7 +115,7 @@ public class AIManager : MonoBehaviour
         {
             bool cardBoughtAndPlayed = BuyAndPlayCard();
             isItNewCard = cardBoughtAndPlayed;
-            if(UnityEngine.Random.Range(0, 10) < 2) PlayRandomCardFromWallet();
+            if(UnityEngine.Random.Range(0, 10) < 4) PlayRandomCardFromWallet();
         }
 
         if(!isItNewCard)
@@ -173,19 +182,20 @@ public class AIManager : MonoBehaviour
 
         if (aiCreatures.Length > 0)
         {
-            FieldCard attacker;
-            attacker = aiCreatures[UnityEngine.Random.Range(0, aiCreatures.Length)];
-            List<Entity> potentialTargets = new List<Entity>();
-            potentialTargets.Add(Player.localPlayer);
-            potentialTargets.AddRange(GameObject.Find("PlayerFieldContent").GetComponent<Transform>().GetComponentsInChildren<FieldCard>());
-
-            if (potentialTargets.Count > 0)
+            foreach (FieldCard attacker in aiCreatures)
             {
-                Entity target = potentialTargets[UnityEngine.Random.Range(0, potentialTargets.Count)];
+                List<Entity> potentialTargets = new List<Entity>();
+                potentialTargets.Add(Player.localPlayer);
+                potentialTargets.AddRange(GameObject.Find("PlayerFieldContent").GetComponent<Transform>().GetComponentsInChildren<FieldCard>());
 
-                /* bool canTarget = target.casterType.CanTarget(attacker.card.acceptableTargets);
-                if (canTarget) */
-                ((CreatureCard)attacker.card.data).Attack(attacker, target);
+                if (potentialTargets.Count > 0)
+                {
+                    Entity target = potentialTargets[UnityEngine.Random.Range(0, potentialTargets.Count)];
+
+                    /* bool canTarget = target.casterType.CanTarget(attacker.card.acceptableTargets);
+                    if (canTarget) */
+                    ((CreatureCard)attacker.card.data).Attack(attacker, target);
+                }   
             }
         }
     }

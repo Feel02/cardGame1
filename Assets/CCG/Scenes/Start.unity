@@ -382,6 +382,7 @@ GameObject:
   - component: {fileID: 301313085}
   - component: {fileID: 301313087}
   - component: {fileID: 301313086}
+  - component: {fileID: 301313088}
   m_Layer: 5
   m_Name: TextPanel (2)
   m_TagString: Untagged
@@ -449,6 +450,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 301313084}
   m_CullTransparentMesh: 0
+--- !u!114 &301313088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 301313084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5491e8819fe85584c8aebd660fa3f742, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  basicAIButton: {fileID: 1798483501}
+  hardAIButton: {fileID: 794420810}
+  offlineStart: {fileID: 1835290473}
 --- !u!1 &340972286
 GameObject:
   m_ObjectHideFlags: 0
@@ -1685,19 +1701,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 794420811}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1835290473}
-        m_TargetAssemblyTypeName: OfflineStartGameButtonScript, Assembly-CSharp
-        m_MethodName: StartGame
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &794420811
 MonoBehaviour:
   m_ObjectHideFlags: 0

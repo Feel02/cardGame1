@@ -25,21 +25,16 @@ public class NetworkManagerCCG : NetworkManager
     // Called when Player connects to the server and joins the game
     public override void OnServerAddPlayer(NetworkConnection conn)
     {
-        //base.OnServerAddPlayer(conn); //Remove this line since we are calling this function again in the same function
         Transform startPos = GetStartPosition();
         GameObject player = Instantiate(playerPrefab);
-
         NetworkServer.AddPlayerForConnection(conn, player);
 
         if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
         {
-            // Add AI player (make sure this is only done in offline mode)
             GameObject aiPlayer = Instantiate(playerPrefab);
             NetworkServer.Spawn(aiPlayer); 
             aiPlayer.GetComponent<Player>().InitializeAI();
-            aiPlayer.SetActive(true); 
-            AIManager aiManager = FindObjectOfType<AIManager>();
-            aiManager.aiPlayer = aiPlayer.GetComponent<Player>();
+            aiPlayer.SetActive(true);
         }
     }
 }

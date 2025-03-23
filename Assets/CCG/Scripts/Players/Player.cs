@@ -48,14 +48,25 @@ public class Player : Entity
         isAI = true;
         hasEnemy = true;
 
-        //GetComponent<NetworkIdentity>().enabled = false;      ??????????????????????
-        if (GetComponent<NetworkTransform>() != null)
+        bool useRLAgent = PlayerPrefs.GetInt("UseRLAgent", 0) == 1;
+
+        if (useRLAgent)
         {
-            //GetComponent<NetworkTransform>().enabled = false; ?????????????????????**
+            gameObject.AddComponent<RL_AIManager>();
+        }
+        else
+        {
+            gameObject.AddComponent<AIManager>();
         }
 
-        // Add AIManager component to AI player
-        gameObject.AddComponent<AIManager>();
+        if (GetComponent<NetworkIdentity>() != null)
+        {
+            GetComponent<NetworkIdentity>().enabled = false;
+        }
+        if (GetComponent<NetworkTransform>() != null)
+        {
+            GetComponent<NetworkTransform>().enabled = false;
+        }
     }
     public override void OnStartLocalPlayer()
     {
