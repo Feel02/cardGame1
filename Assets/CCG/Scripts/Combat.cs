@@ -23,27 +23,27 @@ public class Combat : NetworkBehaviour
     [Command(ignoreAuthority = true)]
     public void CmdChangeHealth(int amount)
     {
-        // Increase health by amount. If 3, increase by 3. If -3, reduce by 3.
-
         entity.health += amount;
 
-        if (PlayerPrefs.GetInt("offlineMode", 0) == 1){
-             //entity.health += amount;
-        
-             if (entity.health <= 0){
+        if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
+        {
+            if (entity.health <= 0)
+            {
                 entity.health = 0;
                 Debug.Log("Entity " + entity.gameObject.name + " health is now zero or less.  Calling RpcDie.");
                 entity.RpcDie();
-             }
-         }
-         else
-         {
-            //entity.health += amount;
-            /* if (entity.health <= 0){
-               entity.RpcDie();
-            } */
+            }
+        }
+        else
+        {
+            // Online mode: Check if health is <= 0 and trigger death
+            if (entity.health <= 0)
+            {
+                Debug.Log("Entity " + entity.gameObject.name + " health is now zero or less.  Calling RpcDie.");
+                entity.RpcDie();
+            }
             Debug.Log("Entity " + entity.gameObject.name + " health changed to " + entity.health);
-         }
+        }
     }
 
     [Command(ignoreAuthority = true)]

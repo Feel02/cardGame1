@@ -209,16 +209,18 @@ public class Player : Entity
     }
 
     void OnDestroy()
-{
-    if (isAI)
     {
-        AIManager aiManager = FindObjectOfType<AIManager>();
-        if (aiManager != null)
+        if (isAI)
         {
-            aiManager.aiPlayer = null;
+            AIManager aiManager = FindObjectOfType<AIManager>();
+            if (aiManager != null)
+            {
+                aiManager.aiPlayer = null;
+            }
         }
     }
-}
+
+    public bool IsDead() => health <= 0;
 
     public bool IsOurTurn() => gameManager.isOurTurn;               
     public bool IsRefresh() => gameManager.isRefreshing;

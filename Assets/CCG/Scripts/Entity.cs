@@ -54,26 +54,20 @@ public abstract partial class Entity : NetworkBehaviour
         if (isLocalPlayer)
         {
             Debug.Log("Local player died. Loading end game scene.");
-            // Player lost: set flag to 0
             PlayerPrefs.SetInt("isPlayerWinner", 0);
-            // Rest of the existing code...
             UnityEngine.SceneManagement.SceneManager.LoadScene(2);
         }
         else
         {
-            Debug.Log("Remote player died. Doing nothing.");
-            if (PlayerPrefs.GetInt("offlineMode", 0) == 1)
+            Debug.Log("Remote player died. Loading end game scene.");
+            Player player = GetComponent<Player>();
+            if (player != null && player.enemyInfo.health <= 0)
             {
-                // Check if this entity is the AI player
-                Player player = GetComponent<Player>();
-                if (player != null && player.isAI)
-                {
-                    // AI died: player wins (set flag to 1)
-                    PlayerPrefs.SetInt("isPlayerWinner", 1);
-                    UnityEngine.SceneManagement.SceneManager.LoadScene(2);
-                }
-                Destroy(gameObject);
+                PlayerPrefs.SetInt("isPlayerWinner", 1);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(2);
             }
+            //Destroy(NetworkManager.singleton.gameObject);
+            Destroy(gameObject);
         }
     }
 
