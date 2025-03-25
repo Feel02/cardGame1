@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 using System.Linq;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public class RL_AIManager : MonoBehaviour
 {
@@ -14,9 +16,9 @@ public class RL_AIManager : MonoBehaviour
 
     // Q-Learning Parameters
     private Dictionary<string, float> qTable = new Dictionary<string, float>();
-    private float learningRate = 0.1f;
-    private float discountFactor = 0.9f;
-    private float explorationRate = 0.3f;
+    public float learningRate = 0.1f;
+    public float discountFactor = 0.9f;
+    public float explorationRate = 0.3f;
 
     // State Tracking
     private string previousState;
@@ -24,8 +26,11 @@ public class RL_AIManager : MonoBehaviour
     private int previousPlayerHealth;
     private int previousAIHealth;
 
-    // Save/Load File Path (Persistent Data Path is platform-specific, good for builds)
+    // Save/Load File Path
     private string saveFilePath;
+
+    // ADD THESE:
+    private bool isAITurnRunning = false;
 
     void Start()
     {
@@ -35,16 +40,15 @@ public class RL_AIManager : MonoBehaviour
             Debug.LogError("AIManager: Player component missing!");
             enabled = false;
         }
-        saveFilePath = Path.Combine(Application.persistentDataPath, "rl_agent_qtable.bin");
-        LoadQTable(); // Load Q-table at start
+        saveFilePath = Path.Combine(Application.persistentDataPath, "rl_agent_qtable.json");
+        LoadQTable();
         print(saveFilePath);
     }
 
     void OnDestroy()
     {
-        SaveQTable(); // Save Q-table when the AI script is destroyed (e.g., game ends)
+        SaveQTable();
     }
-
 
     void Update()
     {
@@ -57,14 +61,25 @@ public class RL_AIManager : MonoBehaviour
         if (Player.gameManager != null && !Player.gameManager.isOurTurn)
         {
             if (!aiInitialized) InitializeAI();
-            Invoke("AITurn", aiTurnDelay);
+
+            if (!isAITurnRunning)
+            {
+                isAITurnRunning = true;
+                StartCoroutine(DelayedAITurn());
+            }
             enabled = false;
         }
     }
 
+
+    private IEnumerator DelayedAITurn()
+    {
+        yield return new WaitForSeconds(aiTurnDelay);
+        AITurn();
+    }
+
     void InitializeAI()
     {
-        // Initialization code from original AIManager
         for (int i = 0; i < aiPlayer.deck.startingDeck.Length; ++i)
         {
             CardAndAmount card = aiPlayer.deck.startingDeck[i];
@@ -96,8 +111,10 @@ public class RL_AIManager : MonoBehaviour
         string currentState = GetState();
         List<string> possibleActions = GetPossibleActions();
 
+        // Add this safety check:
         if (possibleActions.Count == 0)
         {
+            Debug.LogWarning("No possible actions! Ending turn.");
             EndTurn();
             return;
         }
@@ -127,121 +144,164 @@ public class RL_AIManager : MonoBehaviour
 
     string GetState()
     {
-        return string.Format("{0},{1},{2},{3},{4}",
+        string state = string.Format("({0}, {1}, {2}, {3}, {4})", // ADD Parenthesis!
             aiPlayer.mana,
             aiPlayer.health,
             Player.localPlayer.health,
             GetAICreatureCount(),
             GetPlayerCreatureCount()
         );
+        Debug.Log("Unity State: " + state);
+        return state;
     }
 
     int GetAICreatureCount()
     {
-        return GameObject.Find("EnemyFieldContent")
-            .GetComponentsInChildren<FieldCard>().Length;
+        return GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>().Length;
     }
 
     int GetPlayerCreatureCount()
     {
-        return GameObject.Find("PlayerFieldContent")
-            .GetComponentsInChildren<FieldCard>().Length;
+        return GameObject.Find("PlayerFieldContent").GetComponentsInChildren<FieldCard>().Length;
     }
-
     List<string> GetPossibleActions()
     {
         List<string> actions = new List<string>();
 
-        // Buy Actions (Specific Card)
-        for (int i = 0; i < aiPlayer.deck.hand.Count; i++)
+        // Buy actions (only if wallet has space)
+        if (aiPlayer.deck.wallet.Count < 6)
         {
-            if (aiPlayer.deck.hand[i].cost.ToInt() <= aiPlayer.mana)
-                actions.Add($"BUY_{i}");
-        }
-
-        // Play Actions (Specific Card from Wallet)
-        for (int i = 0; i < aiPlayer.deck.wallet.Count; i++)
-        {
-            actions.Add($"PLAY_{i}");
-        }
-
-        // Attack Actions (Specific Attacker, Specific Target)
-        FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
-        FieldCard[] playerCreatures = GameObject.Find("PlayerFieldContent").GetComponentsInChildren<FieldCard>();
-
-        for (int attackerIndex = 0; attackerIndex < aiCreatures.Length; attackerIndex++)
-        {
-            actions.Add($"ATTACK_{attackerIndex}_PLAYER"); // Attack Player
-
-            for (int targetIndex = 0; targetIndex < playerCreatures.Length; targetIndex++)
+            for (int i = 0; i < aiPlayer.deck.hand.Count; i++)
             {
-                actions.Add($"ATTACK_{attackerIndex}_CREATURE_{targetIndex}"); // Attack Creature
+                if (aiPlayer.deck.hand[i].cost.ToInt() <= aiPlayer.mana)
+                {
+                    actions.Add($"('buy', '{aiPlayer.deck.hand[i].data.CardID}')");
+                }
             }
         }
 
+        // Play actions
+        for (int i = 0; i < aiPlayer.deck.wallet.Count; i++)
+        {
+            actions.Add($"('play', '{aiPlayer.deck.wallet[i].data.CardID}')"); // use the cardID instead of index!
+        }
 
-        actions.Add("END");
+        // Attack actions
+        FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
+        FieldCard[] playerCreatures = GameObject.Find("PlayerFieldContent").GetComponentsInChildren<FieldCard>();
+
+        for (int i = 0; i < aiCreatures.Length; i++)
+        {
+            actions.Add($"('attack_player', {i})");
+            for (int j = 0; j < playerCreatures.Length; j++)
+            {
+                actions.Add($"('attack_card', {i}, {j})");
+            }
+        }
+
+        actions.Add("('end_turn',)"); // Enclose end_turn in parentheses
         return actions;
     }
-
     string ChooseAction(string state, List<string> actions)
     {
         if (UnityEngine.Random.value < explorationRate)
-            return actions[UnityEngine.Random.Range(0, actions.Count)];
+        {
+            string randomAction = actions[UnityEngine.Random.Range(0, actions.Count)];
+            Debug.Log("Choosing random action: " + randomAction);  // ADD THIS LINE
+            return randomAction;
+        }
 
         float maxQ = float.MinValue;
         string bestAction = actions[0];
 
         foreach (string action in actions)
         {
-            string key = $"{state}-{action}";
+            string key = $"{state}_{action}";
             float qValue = qTable.ContainsKey(key) ? qTable[key] : 0;
 
-            if (qValue > maxQ)
+            Debug.Log("State " + state + " QTable Key: " + key + " QTable Value: " + qValue); // ADD THIS LINE
+            if (qValue > -2)
             {
                 maxQ = qValue;
                 bestAction = action;
             }
         }
+        Debug.Log("Choosing best action: " + bestAction); // ADD THIS LINE
         return bestAction;
     }
-
     void ExecuteAction(string action)
     {
-        Debug.Log($"RL AI executing action: {action}");
+         Debug.Log($"RL AI executing action: {action}");
 
-        string[] parts = action.Split('_');
+        // Remove the parentheses and split by comma
+        string cleanedAction = action.Trim('(', ')');
+        string[] parts = cleanedAction.Split(new char[] { ',', '\'' }, StringSplitOptions.RemoveEmptyEntries);
 
-        switch (parts[0])
+        // Extract action type and parameters
+        string actionType = parts[0].Trim(); // "buy", "play", "attack_player", etc.
+        foreach (string part in parts)
         {
-            case "BUY":
-                BuyCard(int.Parse(parts[1]));
+            Debug.Log("Part: " + part);
+        }
+        Debug.Log("--------------------------------------s");
+
+        // Now process based on action type
+        switch (actionType)
+        {
+            case "buy":
+                string cardIDToBuy = parts[2].Trim(); // Extract card ID
+                BuyCard(cardIDToBuy);
                 break;
-            case "PLAY":
-                PlaySpecificCard(int.Parse(parts[1])); // Play specific card from wallet
+
+            case "play":
+                string cardIDToPlay = parts[2].Trim(); // Extract card ID
+                PlaySpecificCard(cardIDToPlay);
                 break;
-            case "ATTACK":
-                if (parts[2] == "PLAYER")
-                {
-                    AttackPlayer(int.Parse(parts[1])); // Attack player with specific creature
-                }
-                else if (parts[2] == "CREATURE")
-                {
-                    AttackCreature(int.Parse(parts[1]), int.Parse(parts[3])); // Attack creature with specific creature
-                }
+
+            case "attack_player":
+                int attackerIndexPlayer = int.Parse(parts[1].Trim()); // Extract attacker index
+                AttackPlayer(attackerIndexPlayer);
                 break;
-            case "END":
+
+            case "attack_card":
+                int attackerIndexCard = int.Parse(parts[1].Trim());   // Extract attacker index
+                int targetIndexCard = int.Parse(parts[2].Trim());  // Extract target index
+                AttackCreature(attackerIndexCard, targetIndexCard);
                 break;
+
+            case "end_turn":
+                 EndTurn();
+                 break;
         }
     }
 
-    void PlaySpecificCard(int index)
+    CardInfo? FindCardInHand(string cardID)
     {
-        if (index < aiPlayer.deck.wallet.Count)
+        Debug.Log("Finding Card In Hand!");
+        foreach (CardInfo card in aiPlayer.deck.hand)
         {
-            aiPlayer.deck.CmdPlayCard(aiPlayer.deck.wallet[index], index);
+            Debug.Log("Comparing " + card.data.CardID + " " +  cardID);
+            if (card.data.CardID == cardID)
+            {
+                Debug.Log("Card has been found!");
+                return card; // Found the card
+            }
         }
+        return null; // Card not found
     }
+
+    CardInfo? FindCardInWallet(string cardID)
+    {
+        foreach (CardInfo card in aiPlayer.deck.wallet)
+        {
+            if (card.data.CardID == cardID)
+            {
+                return card; // Found the card
+            }
+        }
+        return null; // Card not found
+    }
+
     void AttackCreature(int attackerIndex, int targetIndex)
     {
         FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
@@ -256,15 +316,60 @@ public class RL_AIManager : MonoBehaviour
         }
     }
 
-    void BuyCard(int index)
+    void BuyCard(string cardID)
     {
-        if (index < aiPlayer.deck.hand.Count &&
-            aiPlayer.mana >= aiPlayer.deck.hand[index].cost.ToInt())
+        Debug.Log("Buying card " + cardID);
+        CardInfo? cardToBuy = FindCardInHand(cardID);
+
+        if (cardToBuy != null && aiPlayer.mana >= cardToBuy?.cost.ToInt())
         {
-            aiPlayer.mana -= aiPlayer.deck.hand[index].cost.ToInt();
-            aiPlayer.deck.wallet.Add(aiPlayer.deck.hand[index]);
-            aiPlayer.deck.hand.RemoveAt(index);
-            aiPlayer.deck.CmdUpdateAIHand();
+            // Find the card's index in the hand
+            int index = -1;
+            for (int i = 0; i < aiPlayer.deck.hand.Count; i++)
+            {
+                if (aiPlayer.deck.hand[i].data.CardID == cardID)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index != -1)
+            {
+                aiPlayer.mana -= cardToBuy.Value.cost.ToInt();
+                aiPlayer.deck.wallet.Add(cardToBuy.Value);
+                aiPlayer.deck.hand.RemoveAt(index);
+
+                // Update UI
+                aiPlayer.UpdateEnemyInfo();
+                aiPlayer.deck.CmdUpdateAIBoughtCard();
+                aiPlayer.deck.CmdUpdateAIHand();
+
+                Debug.Log($"RL AI Bought {cardToBuy?.data.CardID}!");
+            }
+            else
+            {
+                Debug.LogWarning($"Card with ID {cardID} not found in hand!");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Card with ID {cardID} not found or not enough mana!");
+        }
+    }
+
+    void PlaySpecificCard(string cardID)
+    {
+        CardInfo? cardToPlay = FindCardInWallet(cardID);
+
+        if (cardToPlay != null)
+        {
+            Debug.Log("Playing Specific Card Called: " + cardToPlay?.data.CardID);
+            aiPlayer.deck.CmdPlayCard(cardToPlay.Value, aiPlayer.deck.wallet.IndexOf(cardToPlay.Value));
+        }
+        else
+        {
+            Debug.LogWarning($"Card with ID {cardID} not found in Wallet!");
         }
     }
 
@@ -316,7 +421,7 @@ public class RL_AIManager : MonoBehaviour
 
     void UpdateQTable(string oldState, string action, float reward, string newState)
     {
-        if (string.IsNullOrEmpty(oldState)) return;        
+        if (string.IsNullOrEmpty(oldState)) return;
 
         string key = $"{oldState}-{action}";
         float oldQ = qTable.ContainsKey(key) ? qTable[key] : 0;
@@ -327,7 +432,7 @@ public class RL_AIManager : MonoBehaviour
             maxFutureQ = GetPossibleActions()
                 .Select(a => qTable.ContainsKey($"{newState}-{a}") ? qTable[$"{newState}-{a}"] : 0)
                 .Max();
-        }         
+        }
 
         float newQ = oldQ + learningRate * (reward + discountFactor * maxFutureQ - oldQ);
         qTable[key] = newQ;
@@ -338,45 +443,67 @@ public class RL_AIManager : MonoBehaviour
         // Clear previous state
         previousState = null;
         previousAction = null;
-        
+
         // End turn properly
         Player.gameManager.CmdEndTurn();
+
+        // ADD THIS: Clear the flag and re-enable the script!
+        isAITurnRunning = false;
         enabled = true;
     }
 
-    // --- Save/Load Functionality ---
-
     public void SaveQTable()
     {
-        BinaryFormatter bf = new BinaryFormatter();
-        FileStream file = File.Create(saveFilePath);
-        bf.Serialize(file, qTable);
-        file.Close();
-        Debug.Log("Q-Table Saved!");
+        // Serialize the Q-table to JSON
+        string json = JsonConvert.SerializeObject(qTable, Newtonsoft.Json.Formatting.Indented);
+
+        try
+        {
+            File.WriteAllText(saveFilePath, json);
+            Debug.Log("Q-Table Saved to JSON!");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to save Q-Table to JSON: {e.Message}");
+        }
     }
 
+    // Update LoadQTable to match Python format
     public void LoadQTable()
     {
-        if (File.Exists(saveFilePath))
+        string filePath = Path.Combine(Application.persistentDataPath, "rl_agent_qtable.json");
+        if (File.Exists(filePath))
         {
-            BinaryFormatter bf = new BinaryFormatter();
-            FileStream file = File.Open(saveFilePath, FileMode.Open);
             try
             {
-                qTable = (Dictionary<string, float>)bf.Deserialize(file);
-                Debug.Log("Q-Table Loaded!");
+                string json = File.ReadAllText(filePath);
+                JObject jsonObject = JObject.Parse(json);
+
+                foreach (var entry in jsonObject)
+                {
+                    try
+                    {
+                        // Directly parse float values
+                        float value = (float)entry.Value;
+                        qTable[entry.Key] = value;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"Skipping invalid entry {entry.Key}: {e.Message}");
+                    }
+                }
+                Debug.Log($"Loaded {qTable.Count} valid Q-table entries");
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to load Q-Table: {e.Message}");
-                qTable = new Dictionary<string, float>(); // Initialize empty Q-table if loading fails
+                Debug.LogError($"Load failed: {e.Message}");
+                qTable = new Dictionary<string, float>();
             }
-            file.Close();
         }
         else
         {
-            Debug.Log("No Q-Table save file found. Starting with an empty Q-Table.");
-            qTable = new Dictionary<string, float>(); // Initialize empty Q-table if no file exists
+            Debug.Log("No Q-table found - using random actions");
+            qTable = new Dictionary<string, float>();
         }
     }
 }

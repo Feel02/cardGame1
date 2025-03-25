@@ -50,6 +50,14 @@ public abstract partial class Entity : NetworkBehaviour
     public void RpcDie()
     {
         Debug.Log("RpcDie called on " + gameObject.name);
+        if(gameObject.name == "Player"){
+            PlayerPrefs.SetInt("isPlayerWinner", 0);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+        }
+        if(gameObject.name =="AI Player"){
+            PlayerPrefs.SetInt("isPlayerWinner", 1);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+        }
 
         if (isLocalPlayer)
         {

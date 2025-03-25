@@ -12,6 +12,10 @@ public partial struct CardInfo
     public string cardID;
     public int amount; // Used for deck building only. Serves no purpose once the card is in the game / on the board.
 
+    public int strength => data is CreatureCard ? ((CreatureCard)data).strength : 0;
+    public int health => data is CreatureCard ? ((CreatureCard)data).health : 0;
+    public int price => data is CreatureCard ? ((CreatureCard)data).cost : 0;
+
     public CardInfo(ScriptableCard data, int amount = 1)
     {
         cardID = data.CardID;
