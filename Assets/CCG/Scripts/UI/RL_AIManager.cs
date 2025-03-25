@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
@@ -18,7 +17,8 @@ public class RL_AIManager : MonoBehaviour
     private Dictionary<string, float> qTable = new Dictionary<string, float>();
     public float learningRate = 0.1f;
     public float discountFactor = 0.9f;
-    public float explorationRate = 0.3f;
+    public float explorationRate = 0.3f;  //Initial Exploration Rate
+    public float explorationRateDecay = 0.001f; //How much to decay with each turn
 
     // State Tracking
     private string previousState;
@@ -26,11 +26,9 @@ public class RL_AIManager : MonoBehaviour
     private int previousPlayerHealth;
     private int previousAIHealth;
 
-    // Save/Load File Path
+    // Save/Load File Path (Persistent Data Path is platform-specific, good for builds)
     private string saveFilePath;
-
-    // ADD THESE:
-    private bool isAITurnRunning = false;
+    private int turnCount = 0;
 
     void Start()
     {
@@ -40,15 +38,16 @@ public class RL_AIManager : MonoBehaviour
             Debug.LogError("AIManager: Player component missing!");
             enabled = false;
         }
-        saveFilePath = Path.Combine(Application.persistentDataPath, "rl_agent_qtable.json");
-        LoadQTable();
+        saveFilePath = Path.Combine(Application.persistentDataPath, "rl_agent_qtable.json"); // Change to JSON
+        LoadQTable(); // Load Q-table at start
         print(saveFilePath);
     }
 
     void OnDestroy()
     {
-        SaveQTable();
+        SaveQTable(); // Save Q-table when the AI script is destroyed (e.g., game ends)
     }
+
 
     void Update()
     {
@@ -61,25 +60,17 @@ public class RL_AIManager : MonoBehaviour
         if (Player.gameManager != null && !Player.gameManager.isOurTurn)
         {
             if (!aiInitialized) InitializeAI();
-
-            if (!isAITurnRunning)
+            if (!IsInvoking("AITurn") && enabled) // Prevent multiple invocations, make sure RL_AIManager is enabled
             {
-                isAITurnRunning = true;
-                StartCoroutine(DelayedAITurn());
+                Invoke("AITurn", aiTurnDelay);
+                enabled = false; // Disable RL_AIManager until AITurn is finished
             }
-            enabled = false;
         }
-    }
-
-
-    private IEnumerator DelayedAITurn()
-    {
-        yield return new WaitForSeconds(aiTurnDelay);
-        AITurn();
     }
 
     void InitializeAI()
     {
+        // Initialization code from original AIManager
         for (int i = 0; i < aiPlayer.deck.startingDeck.Length; ++i)
         {
             CardAndAmount card = aiPlayer.deck.startingDeck[i];
@@ -97,6 +88,10 @@ public class RL_AIManager : MonoBehaviour
 
     void AITurn()
     {
+        turnCount++;
+        // Decay exploration rate over time
+        explorationRate = Mathf.Max(0.1f, explorationRate - explorationRateDecay);
+
         // Add these lines from the original AIManager
         aiPlayer.mana += 1;
 
@@ -109,26 +104,40 @@ public class RL_AIManager : MonoBehaviour
         previousAIHealth = aiPlayer.health;
 
         string currentState = GetState();
-        List<string> possibleActions = GetPossibleActions();
-
-        // Add this safety check:
-        if (possibleActions.Count == 0)
-        {
-            Debug.LogWarning("No possible actions! Ending turn.");
-            EndTurn();
-            return;
-        }
-
-        string chosenAction = ChooseAction(currentState, possibleActions);
-        ExecuteAction(chosenAction);
-
-        float reward = CalculateReward();
-        UpdateQTable(previousState, previousAction, reward, currentState);
-
         previousState = currentState;
-        previousAction = chosenAction;
+        previousAction = null;
+        float totalReward = 0;  //Accumulate reward
 
-        Invoke("EndTurn", 0.5f);
+        while (true)
+        {
+            List<string> possibleActions = GetPossibleActions();
+            if (possibleActions.Count == 0)
+            {
+                Debug.Log("No possible actions. Ending turn.");
+                break;
+            }
+
+            string chosenAction = ChooseAction(currentState, possibleActions);
+            previousAction = chosenAction;
+            Debug.Log("Executing the action" + chosenAction);
+            ExecuteAction(chosenAction);
+            float reward = CalculateReward();
+            totalReward += reward;
+
+            UpdateQTable(previousState, previousAction, reward, currentState);
+
+            previousState = currentState;
+            currentState = GetState();
+
+            //Check if action was to end turn
+            if (chosenAction.Contains("end_turn"))
+            {
+                Debug.Log("Action has been executed, it contains end_turn. Ending turn.");
+                break;
+            }
+           // await System.Threading.Tasks.Task.Delay(500); // Delay for 0.5 seconds
+        }
+        EndTurn(totalReward);
     }
 
     void AttackPlayer(int attackerIndex)
@@ -220,7 +229,7 @@ public class RL_AIManager : MonoBehaviour
             float qValue = qTable.ContainsKey(key) ? qTable[key] : 0;
 
             Debug.Log("State " + state + " QTable Key: " + key + " QTable Value: " + qValue); // ADD THIS LINE
-            if (qValue > -2)
+            if (qValue > maxQ)
             {
                 maxQ = qValue;
                 bestAction = action;
@@ -231,7 +240,7 @@ public class RL_AIManager : MonoBehaviour
     }
     void ExecuteAction(string action)
     {
-         Debug.Log($"RL AI executing action: {action}");
+        Debug.Log($"RL AI executing action: {action}");
 
         // Remove the parentheses and split by comma
         string cleanedAction = action.Trim('(', ')');
@@ -270,8 +279,8 @@ public class RL_AIManager : MonoBehaviour
                 break;
 
             case "end_turn":
-                 EndTurn();
-                 break;
+                //Do nothing because it should be done inside of AITurn Method
+                break;
         }
     }
 
@@ -280,7 +289,7 @@ public class RL_AIManager : MonoBehaviour
         Debug.Log("Finding Card In Hand!");
         foreach (CardInfo card in aiPlayer.deck.hand)
         {
-            Debug.Log("Comparing " + card.data.CardID + " " +  cardID);
+            Debug.Log("Comparing " + card.data.CardID + " " + cardID);
             if (card.data.CardID == cardID)
             {
                 Debug.Log("Card has been found!");
@@ -412,9 +421,19 @@ public class RL_AIManager : MonoBehaviour
         reward += (previousPlayerHealth - Player.localPlayer.health) * 1f;
         reward -= (previousAIHealth - aiPlayer.health) * 0.8f;
 
+        // Mana efficiency (using more mana is good)
+        reward += (aiPlayer.mana / 100f) * 0.1f;
+
+        //Card efficiency(using more cards is good)
+        reward += (aiPlayer.deck.hand.Count / 3f) * 0.05f;
+
         // Game termination
         if (Player.localPlayer.health <= 0) reward += 100f;
         if (aiPlayer.health <= 0) reward -= 100f;
+
+        //Board control (number of creatures on ai side)
+        reward += GetAICreatureCount() * 0.005f;
+        reward -= GetPlayerCreatureCount() * 0.005f;
 
         return reward;
     }
@@ -427,9 +446,10 @@ public class RL_AIManager : MonoBehaviour
         float oldQ = qTable.ContainsKey(key) ? qTable[key] : 0;
 
         float maxFutureQ = 0;
-        if (GetPossibleActions().Count > 0)
+        List<string> possibleActions = GetPossibleActions();
+        if (possibleActions.Count > 0)
         {
-            maxFutureQ = GetPossibleActions()
+            maxFutureQ = possibleActions
                 .Select(a => qTable.ContainsKey($"{newState}-{a}") ? qTable[$"{newState}-{a}"] : 0)
                 .Max();
         }
@@ -438,18 +458,20 @@ public class RL_AIManager : MonoBehaviour
         qTable[key] = newQ;
     }
 
-    void EndTurn()
+    void EndTurn(float totalReward)
     {
         // Clear previous state
+        string currentState = GetState();
+        string key = $"{previousState}-('end_turn',)";
+        float oldQ = qTable.ContainsKey(key) ? qTable[key] : 0;
+        float newQ = oldQ + learningRate * (totalReward - oldQ);
+        qTable[key] = newQ;
         previousState = null;
         previousAction = null;
 
         // End turn properly
         Player.gameManager.CmdEndTurn();
-
-        // ADD THIS: Clear the flag and re-enable the script!
-        isAITurnRunning = false;
-        enabled = true;
+        enabled = true; // Re-enable RL_AIManager
     }
 
     public void SaveQTable()
