@@ -20,13 +20,16 @@ public class RL_AIManager : MonoBehaviour
     public float explorationRate = 0.3f;  //Initial Exploration Rate
     public float explorationRateDecay = 0.001f; //How much to decay with each turn
 
+    // Flag to determine if we use the pre-trained Q-table
+    public bool usePretrainedQTable = true;
+
     // State Tracking
     private string previousState;
     private string previousAction;
     private int previousPlayerHealth;
     private int previousAIHealth;
 
-    // Save/Load File Path (Persistent Data Path is platform-specific, good for builds)
+    // Save/Load File Path (only used if not using the pre-trained Q-table)
     private string saveFilePath;
     private int turnCount = 0;
 
@@ -38,16 +41,27 @@ public class RL_AIManager : MonoBehaviour
             Debug.LogError("AIManager: Player component missing!");
             enabled = false;
         }
-        saveFilePath = Path.Combine(Application.persistentDataPath, "rl_agent_qtable.json"); // Change to JSON
-        LoadQTable(); // Load Q-table at start
-        print(saveFilePath);
+        
+        // If using a pre-trained Q-table, load from Resources.
+        if (usePretrainedQTable)
+        {
+            LoadPretrainedQTable();
+        }
+        else
+        {
+            saveFilePath = Path.Combine(Application.persistentDataPath, "rl_agent_qtable.json");
+            LoadQTable(); // Load Q-table from persistent data
+        }
+        
+        Debug.Log("Q-Table initialization complete.");
     }
 
     void OnDestroy()
     {
-        SaveQTable(); // Save Q-table when the AI script is destroyed (e.g., game ends)
+        // Only save if we are not using the pre-trained Q-table.
+        if (!usePretrainedQTable)
+            SaveQTable();
     }
-
 
     void Update()
     {
@@ -60,17 +74,17 @@ public class RL_AIManager : MonoBehaviour
         if (Player.gameManager != null && !Player.gameManager.isOurTurn)
         {
             if (!aiInitialized) InitializeAI();
-            if (!IsInvoking("AITurn") && enabled) // Prevent multiple invocations, make sure RL_AIManager is enabled
+            if (!IsInvoking("AITurn") && enabled)
             {
                 Invoke("AITurn", aiTurnDelay);
-                enabled = false; // Disable RL_AIManager until AITurn is finished
+                enabled = false;
             }
         }
     }
 
     void InitializeAI()
     {
-        // Initialization code from original AIManager
+        // Original initialization code...
         for (int i = 0; i < aiPlayer.deck.startingDeck.Length; ++i)
         {
             CardAndAmount card = aiPlayer.deck.startingDeck[i];
@@ -91,11 +105,8 @@ public class RL_AIManager : MonoBehaviour
         turnCount++;
         // Decay exploration rate over time
         explorationRate = Mathf.Max(0.1f, explorationRate - explorationRateDecay);
-
-        // Add these lines from the original AIManager
         aiPlayer.mana += 1;
 
-        // 1. Restart hand
         int[] indexes = new int[3];
         aiPlayer.deck.RestartHand(indexes);
         aiPlayer.deck.CmdUpdateAIHand();
@@ -106,7 +117,7 @@ public class RL_AIManager : MonoBehaviour
         string currentState = GetState();
         previousState = currentState;
         previousAction = null;
-        float totalReward = 0;  //Accumulate reward
+        float totalReward = 0;
 
         while (true)
         {
@@ -119,23 +130,22 @@ public class RL_AIManager : MonoBehaviour
 
             string chosenAction = ChooseAction(currentState, possibleActions);
             previousAction = chosenAction;
-            Debug.Log("Executing the action" + chosenAction);
+            Debug.Log("Executing action: " + chosenAction);
             ExecuteAction(chosenAction);
             float reward = CalculateReward();
             totalReward += reward;
 
+            // Update Q-table only if not using the pre-trained version.
             UpdateQTable(previousState, previousAction, reward, currentState);
 
             previousState = currentState;
             currentState = GetState();
 
-            //Check if action was to end turn
             if (chosenAction.Contains("end_turn"))
             {
-                Debug.Log("Action has been executed, it contains end_turn. Ending turn.");
+                Debug.Log("End turn action executed. Ending turn.");
                 break;
             }
-           // await System.Threading.Tasks.Task.Delay(500); // Delay for 0.5 seconds
         }
         EndTurn(totalReward);
     }
@@ -153,7 +163,7 @@ public class RL_AIManager : MonoBehaviour
 
     string GetState()
     {
-        string state = string.Format("({0}, {1}, {2}, {3}, {4})", // ADD Parenthesis!
+        string state = string.Format("({0}, {1}, {2}, {3}, {4})",
             aiPlayer.mana,
             aiPlayer.health,
             Player.localPlayer.health,
@@ -177,7 +187,6 @@ public class RL_AIManager : MonoBehaviour
     {
         List<string> actions = new List<string>();
 
-        // Buy actions (only if wallet has space)
         if (aiPlayer.deck.wallet.Count < 6)
         {
             for (int i = 0; i < aiPlayer.deck.hand.Count; i++)
@@ -189,13 +198,11 @@ public class RL_AIManager : MonoBehaviour
             }
         }
 
-        // Play actions
         for (int i = 0; i < aiPlayer.deck.wallet.Count; i++)
         {
-            actions.Add($"('play', '{aiPlayer.deck.wallet[i].data.CardID}')"); // use the cardID instead of index!
+            actions.Add($"('play', '{aiPlayer.deck.wallet[i].data.CardID}')");
         }
 
-        // Attack actions
         FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
         FieldCard[] playerCreatures = GameObject.Find("PlayerFieldContent").GetComponentsInChildren<FieldCard>();
 
@@ -208,7 +215,7 @@ public class RL_AIManager : MonoBehaviour
             }
         }
 
-        actions.Add("('end_turn',)"); // Enclose end_turn in parentheses
+        actions.Add("('end_turn',)");
         return actions;
     }
     string ChooseAction(string state, List<string> actions)
@@ -216,7 +223,7 @@ public class RL_AIManager : MonoBehaviour
         if (UnityEngine.Random.value < explorationRate)
         {
             string randomAction = actions[UnityEngine.Random.Range(0, actions.Count)];
-            Debug.Log("Choosing random action: " + randomAction);  // ADD THIS LINE
+            Debug.Log("Choosing random action: " + randomAction);
             return randomAction;
         }
 
@@ -227,59 +234,45 @@ public class RL_AIManager : MonoBehaviour
         {
             string key = $"{state}_{action}";
             float qValue = qTable.ContainsKey(key) ? qTable[key] : 0;
-
-            Debug.Log("State " + state + " QTable Key: " + key + " QTable Value: " + qValue); // ADD THIS LINE
+            Debug.Log("State " + state + " QTable Key: " + key + " QTable Value: " + qValue);
             if (qValue > maxQ)
             {
                 maxQ = qValue;
                 bestAction = action;
             }
         }
-        Debug.Log("Choosing best action: " + bestAction); // ADD THIS LINE
+        Debug.Log("Choosing best action: " + bestAction);
         return bestAction;
     }
     void ExecuteAction(string action)
     {
         Debug.Log($"RL AI executing action: {action}");
-
-        // Remove the parentheses and split by comma
         string cleanedAction = action.Trim('(', ')');
         string[] parts = cleanedAction.Split(new char[] { ',', '\'' }, StringSplitOptions.RemoveEmptyEntries);
+        string actionType = parts[0].Trim();
+        Debug.Log("--------------------------------------");
 
-        // Extract action type and parameters
-        string actionType = parts[0].Trim(); // "buy", "play", "attack_player", etc.
-        foreach (string part in parts)
-        {
-            Debug.Log("Part: " + part);
-        }
-        Debug.Log("--------------------------------------s");
-
-        // Now process based on action type
         switch (actionType)
         {
             case "buy":
-                string cardIDToBuy = parts[2].Trim(); // Extract card ID
+                string cardIDToBuy = parts[2].Trim();
                 BuyCard(cardIDToBuy);
                 break;
-
             case "play":
-                string cardIDToPlay = parts[2].Trim(); // Extract card ID
+                string cardIDToPlay = parts[2].Trim();
                 PlaySpecificCard(cardIDToPlay);
                 break;
-
             case "attack_player":
-                int attackerIndexPlayer = int.Parse(parts[1].Trim()); // Extract attacker index
+                int attackerIndexPlayer = int.Parse(parts[1].Trim());
                 AttackPlayer(attackerIndexPlayer);
                 break;
-
             case "attack_card":
-                int attackerIndexCard = int.Parse(parts[1].Trim());   // Extract attacker index
-                int targetIndexCard = int.Parse(parts[2].Trim());  // Extract target index
+                int attackerIndexCard = int.Parse(parts[1].Trim());
+                int targetIndexCard = int.Parse(parts[2].Trim());
                 AttackCreature(attackerIndexCard, targetIndexCard);
                 break;
-
             case "end_turn":
-                //Do nothing because it should be done inside of AITurn Method
+                // No action needed here; handled in AITurn.
                 break;
         }
     }
@@ -440,7 +433,12 @@ public class RL_AIManager : MonoBehaviour
 
     void UpdateQTable(string oldState, string action, float reward, string newState)
     {
-        if (string.IsNullOrEmpty(oldState)) return;
+        if (string.IsNullOrEmpty(oldState))
+            return;
+
+        // If using the pre-trained Q-table, skip updates.
+        if (usePretrainedQTable)
+            return;
 
         string key = $"{oldState}-{action}";
         float oldQ = qTable.ContainsKey(key) ? qTable[key] : 0;
@@ -460,7 +458,6 @@ public class RL_AIManager : MonoBehaviour
 
     void EndTurn(float totalReward)
     {
-        // Clear previous state
         string currentState = GetState();
         string key = $"{previousState}-('end_turn',)";
         float oldQ = qTable.ContainsKey(key) ? qTable[key] : 0;
@@ -468,17 +465,13 @@ public class RL_AIManager : MonoBehaviour
         qTable[key] = newQ;
         previousState = null;
         previousAction = null;
-
-        // End turn properly
         Player.gameManager.CmdEndTurn();
-        enabled = true; // Re-enable RL_AIManager
+        enabled = true;
     }
 
     public void SaveQTable()
     {
-        // Serialize the Q-table to JSON
         string json = JsonConvert.SerializeObject(qTable, Newtonsoft.Json.Formatting.Indented);
-
         try
         {
             File.WriteAllText(saveFilePath, json);
@@ -493,19 +486,17 @@ public class RL_AIManager : MonoBehaviour
     // Update LoadQTable to match Python format
     public void LoadQTable()
     {
-        string filePath = Path.Combine(Application.persistentDataPath, "rl_agent_qtable.json");
-        if (File.Exists(filePath))
+        if (File.Exists(saveFilePath))
         {
             try
             {
-                string json = File.ReadAllText(filePath);
+                string json = File.ReadAllText(saveFilePath);
                 JObject jsonObject = JObject.Parse(json);
 
                 foreach (var entry in jsonObject)
                 {
                     try
                     {
-                        // Directly parse float values
                         float value = (float)entry.Value;
                         qTable[entry.Key] = value;
                     }
@@ -525,6 +516,42 @@ public class RL_AIManager : MonoBehaviour
         else
         {
             Debug.Log("No Q-table found - using random actions");
+            qTable = new Dictionary<string, float>();
+        }
+    }
+    public void LoadPretrainedQTable()
+    {
+        TextAsset qTableAsset = Resources.Load<TextAsset>("rl_agent_qtable"); // Place your file in Resources folder without extension
+        if (qTableAsset != null)
+        {
+            try
+            {
+                string json = qTableAsset.text;
+                JObject jsonObject = JObject.Parse(json);
+
+                foreach (var entry in jsonObject)
+                {
+                    try
+                    {
+                        float value = (float)entry.Value;
+                        qTable[entry.Key] = value;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"Skipping invalid entry {entry.Key}: {e.Message}");
+                    }
+                }
+                Debug.Log($"Loaded {qTable.Count} pre-trained Q-table entries");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Pre-trained Q-table load failed: {e.Message}");
+                qTable = new Dictionary<string, float>();
+            }
+        }
+        else
+        {
+            Debug.Log("Pre-trained Q-table not found in Resources. Using an empty Q-table.");
             qTable = new Dictionary<string, float>();
         }
     }
