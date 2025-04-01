@@ -56,6 +56,11 @@ public class RL_AIManager : MonoBehaviour
         }
         
         Debug.Log("Q-Table initialization complete.");
+
+        Sprite[] sprites = Resources.LoadAll<Sprite>("Portraits/Trainer");
+        print(sprites.Length);
+        aiPlayer.portrait = sprites[8];
+        aiPlayer.username = "AI Player";
     }
 
     void OnDestroy()
