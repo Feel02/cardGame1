@@ -18,6 +18,11 @@ public class AIManager : MonoBehaviour
             Debug.LogError("AIManager: Player component missing!");
             enabled = false;
         }
+        
+        Sprite[] sprites = Resources.LoadAll<Sprite>("Portraits/Trainer");
+        print(sprites.Length);
+        aiPlayer.portrait = sprites[5];
+        aiPlayer.username = "AI Player";
     }
 
     void Update()
@@ -127,10 +132,11 @@ public class AIManager : MonoBehaviour
     {
 
         List<int> affordableCardIndices = new List<int>();
+        List<CardInfo> handCopy = new List<CardInfo>(aiPlayer.deck.hand);
 
-        for (int i = 0; i < aiPlayer.deck.hand.Count; i++)
+        for(int i = 0; i < handCopy.Count; i++)
         {
-            if (aiPlayer.deck.hand[i].cost.ToInt() <= aiPlayer.mana)
+            if (handCopy[i].cost.ToInt() <= aiPlayer.mana)
             {
                 affordableCardIndices.Add(i);
             }
@@ -140,13 +146,13 @@ public class AIManager : MonoBehaviour
         {
             if(aiPlayer.deck.wallet.Count == 6) continue;
 
-            int cardCost = aiPlayer.deck.hand[index].cost.ToInt();
+            int cardCost = handCopy[index].cost.ToInt();
             // Check if the AI can afford the card
             if (aiPlayer.mana >= cardCost)
             {
                 aiPlayer.mana -= cardCost;
 
-                aiPlayer.deck.wallet.Add(aiPlayer.deck.hand[index]);
+                aiPlayer.deck.wallet.Add(handCopy[index]);
                 //AI must remove the card from the hand, the player must see it
                 aiPlayer.deck.hand.RemoveAt(index);
                 aiPlayer.UpdateEnemyInfo(); // Ensure UI updates

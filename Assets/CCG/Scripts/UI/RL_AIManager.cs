@@ -13,6 +13,8 @@ public class RL_AIManager : MonoBehaviour
     public float aiTurnDelay = 2f;
     private bool aiInitialized = false;
 
+    private List<int> usedCards = new List<int>();
+
     // Q-Learning Parameters
     private Dictionary<string, float> qTable = new Dictionary<string, float>();
     public float learningRate = 0.1f;
@@ -96,13 +98,37 @@ public class RL_AIManager : MonoBehaviour
             if (aiPlayer.deck.hand.Count < 3)
                 aiPlayer.deck.hand.Add(new CardInfo(card.card, 1));
         }
-        aiPlayer.deck.hand.Shuffle();
+        if (aiPlayer.deck.hand.Count == 3)
+        {
+            aiPlayer.deck.hand.Shuffle();
+        }
+        DrawInitialHand();
         aiInitialized = true;
+    }
+
+    void DrawInitialHand()
+    {
+       
+        int[] indexes = new int[3];
+
+        for (int i = 0; i < 3; i++)
+        {
+            indexes[i] = UnityEngine.Random.Range(0, aiPlayer.deck.deckList.Count);
+        }
+
+        if (aiPlayer.deck.hand.Count != 0)
+            aiPlayer.deck.hand.Clear();
+
+        for (int i = 0; i < 3; i++)
+        {
+            aiPlayer.deck.hand.Add(aiPlayer.deck.deckList[indexes[i]]);
+        }
     }
 
     void AITurn()
     {
         turnCount++;
+        usedCards.Clear();
         // Decay exploration rate over time
         explorationRate = Mathf.Max(0.1f, explorationRate - explorationRateDecay);
         aiPlayer.mana += 1;
@@ -158,6 +184,8 @@ public class RL_AIManager : MonoBehaviour
             FieldCard attacker = aiCreatures[attackerIndex];
             // Use networked command
             ((CreatureCard)attacker.card.data).Attack(attacker, Player.localPlayer);
+            usedCards.Add(attacker.GetInstanceID()); // Mark the card as used
+            Debug.Log(attacker.GetInstanceID() + " has been used!");
         }
     }
 
@@ -190,7 +218,7 @@ public class RL_AIManager : MonoBehaviour
         if (aiPlayer.deck.wallet.Count < 6)
         {
             for (int i = 0; i < aiPlayer.deck.hand.Count; i++)
-            {
+            {   
                 if (aiPlayer.deck.hand[i].cost.ToInt() <= aiPlayer.mana)
                 {
                     actions.Add($"('buy', '{aiPlayer.deck.hand[i].data.CardID}')");
@@ -208,6 +236,8 @@ public class RL_AIManager : MonoBehaviour
 
         for (int i = 0; i < aiCreatures.Length; i++)
         {
+            if(usedCards.Contains(aiCreatures[i].GetInstanceID())) continue;
+            
             actions.Add($"('attack_player', {i})");
             for (int j = 0; j < playerCreatures.Length; j++)
             {
@@ -315,6 +345,7 @@ public class RL_AIManager : MonoBehaviour
             FieldCard target = playerCreatures[targetIndex];
             // Use networked command
             ((CreatureCard)attacker.card.data).Attack(attacker, target);
+            usedCards.Add(attacker.GetInstanceID()); // Mark the card as used
         }
     }
 

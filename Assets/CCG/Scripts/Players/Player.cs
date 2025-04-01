@@ -219,9 +219,6 @@ public class Player : Entity
             }
         }
     }
-
-    public bool IsDead() => health <= 0;
-
     public bool IsOurTurn() => gameManager.isOurTurn;               
     public bool IsRefresh() => gameManager.isRefreshing;
 }
