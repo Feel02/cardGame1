@@ -40,6 +40,34 @@ public class Player : Entity
     // We store all our enemy's info in a PlayerInfo struct so we can pass it through the network when needed.
     [HideInInspector] public static GameManager gameManager;
     [SyncVar, HideInInspector] public bool firstPlayer = false; // Is it player 1, player 2, etc.
+    [SyncVar, HideInInspector] public bool isAI = false;
+
+    public void InitializeAI()
+    {
+        username = "AI Player";
+        isAI = true;
+        hasEnemy = true;
+
+        bool useRLAgent = PlayerPrefs.GetInt("UseRLAgent", 0) == 1;
+
+        if (useRLAgent)
+        {
+            gameObject.AddComponent<RL_AIManager>();
+        }
+        else
+        {
+            gameObject.AddComponent<AIManager>();
+        }
+
+        if (GetComponent<NetworkIdentity>() != null)
+        {
+            GetComponent<NetworkIdentity>().enabled = false;
+        }
+        if (GetComponent<NetworkTransform>() != null)
+        {
+            GetComponent<NetworkTransform>().enabled = false;
+        }
+    }
     public override void OnStartLocalPlayer()
     {
         localPlayer = this;
@@ -95,6 +123,12 @@ public class Player : Entity
         }
     }
 
+    [Command]
+    public void CmdStartGame()
+    {
+        gameManager.StartGame();
+    }
+
     private void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
@@ -102,11 +136,22 @@ public class Player : Entity
         maxMana = gameManager.maxMana;
         deck.deckSize = gameManager.deckSize;
         deck.handSize = gameManager.handSize;
+
         if (isServerOnly)
         {
             System.Random rnd = new System.Random();
             Boolean random = rnd.NextDouble() <= 0.5 ? true : false;
             firstPlayer = random;
+        }
+        // Offline mode: Determine first player randomly for the human player
+        else if (isServer && !isAI && PlayerPrefs.GetInt("offlineMode", 0) == 1)
+        {
+            firstPlayer = true;
+        }
+        // Ensure AI is never the first player in offline mode
+        else if (isAI)
+        {
+            firstPlayer = false;
         }
     }
 
@@ -124,6 +169,8 @@ public class Player : Entity
 
     public void UpdateEnemyInfo()
     {
+        if (PlayerPrefs.GetInt("offlineMode", 0) == 1 && isAI) return; // AI doesn't need enemy info
+
         // Find all Players and add them to the list.
         Player[] onlinePlayers = FindObjectsOfType<Player>();
 
@@ -136,7 +183,8 @@ public class Player : Entity
                     gameManager.players[1].player.GetComponent<Player>().firstPlayer = !firstPlayer;
                 }
             }
-            else{
+            else
+            {
                 gameManager.CmdAddPlayerToPlayersList(new PlayerInfo(player.gameObject));
                 if(player != null && player.username != ""){ 
                     // Make sure the players are loaded properly (we load the usernames first)
@@ -150,7 +198,7 @@ public class Player : Entity
                         enemyInfo.data.casterType = Target.OPPONENT;
                         gameManager.StartGame();
                     }
-                } 
+                }
             }
         }
     }
@@ -160,6 +208,17 @@ public class Player : Entity
         firstPlayer = v;
     }
 
+    void OnDestroy()
+    {
+        if (isAI)
+        {
+            AIManager aiManager = FindObjectOfType<AIManager>();
+            if (aiManager != null)
+            {
+                aiManager.aiPlayer = null;
+            }
+        }
+    }
     public bool IsOurTurn() => gameManager.isOurTurn;               
     public bool IsRefresh() => gameManager.isRefreshing;
 }

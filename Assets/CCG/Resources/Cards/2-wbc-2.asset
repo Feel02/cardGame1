@@ -19,7 +19,7 @@ MonoBehaviour:
   cardName: Leukocytes
   intiatives: []
   hasInitiative: 0
-  description: White Blood Cell Level 2
+  description: A mature white blood cells that help fight infections and diseases.
   strength: 4
   health: 2
   acceptableTargets: 0301

@@ -117,40 +117,49 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     public void RpcTakeDamageToSelf(int amount)
     {
-        if(isOurTurn)
+        //if(isOurTurn)
+        if(isOurTurn && Player.localPlayer != null)
             Player.localPlayer.combat.CmdChangeHealth(-amount);
     }    
 
     [Command(ignoreAuthority = true)]
-    public void CmdChangeFirstPlayer(bool firstPlayer)
-    {
-        players[0].player.GetComponent<Player>().ChangeFirstPlayer(firstPlayer);
-        players[1].player.GetComponent<Player>().ChangeFirstPlayer(!firstPlayer);
-    }
-
-    [Command(ignoreAuthority = true)]
     public void CmdAddPlayerToPlayersList(PlayerInfo player){
-        if(!players.Contains(player)){
+        //if(!players.Contains(player))
+        if(!players.Any(p => p.player == player.player)){
             player.data.mana = 1;
             players.Add(player);
         }
     }
 
+    public void EndTurn()
+    {
+        timer.StopTimer();
+        RpcSetTurn();
+    }
     public void StartGame()
     {
-        Player player = Player.localPlayer;
-        try{
-            //player.mana = 1;
-            player.enemyInfo.data.mana = 1;
-            
-            if(player.firstPlayer){
-                endTurnButton.SetActive(true);
+        // Check if both players are present and initialized
+        if (players.Count == 2)
+        {
+            Player player = Player.localPlayer;
+
+            // Assign firstPlayer based on the logic in Player.Start()
+            if (player.firstPlayer)
+            {
                 isOurTurn = true;
                 isRefreshing = true;
+                endTurnButton.SetActive(true);
                 timer.StartTimer();
             }
-        } catch {
-            Debug.Log("A player trying to access somewhere they shouldn't but don't worry, I can fix her.");
+            else
+            {
+                isOurTurn = false;
+                isRefreshing = false;
+                endTurnButton.SetActive(false);
+                timer.StopTimer();
+            }
+
+            turnCount = 1; // Initialize turn count
         }
     }
 }

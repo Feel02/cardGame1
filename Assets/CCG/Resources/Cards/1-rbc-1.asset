@@ -19,7 +19,7 @@ MonoBehaviour:
   cardName: Reticulocyte
   intiatives: []
   hasInitiative: 0
-  description: Red Blood Cell Level 1
+  description: A young, developing red blood cell that will carry oxygen.
   strength: 1
   health: 1
   acceptableTargets: 0301

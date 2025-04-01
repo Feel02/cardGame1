@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿ using UnityEngine;
 using Mirror;
 using System;
 using System.Linq;
@@ -106,21 +106,11 @@ public class Deck : NetworkBehaviour
     [ClientRpc]
     public void RpcPlayCardField(GameObject boardCard, int index)
     {
-        if (Player.gameManager.isSpawning)
-        {
-            // Set our FieldCard as a FRIENDLY creature for our local player, and ENEMY for our opponent.
-            boardCard.GetComponent<FieldCard>().casterType = Target.FRIENDLIES;
-            boardCard.transform.SetParent(Player.gameManager.playerField.content, false);
-            Player.gameManager.playerWallet.RemoveCard(index); // Update player's wallet
-            Player.gameManager.isSpawning = false;
-            
-        }
-        else if (player.hasEnemy)
-        {
-            boardCard.GetComponent<FieldCard>().casterType = Target.ENEMIES;
-            boardCard.transform.SetParent(Player.gameManager.enemyField.content, false);
-            //Player.gameManager.enemyWallet.RemoveCard(index);
-        }
+        // Set our FieldCard as a FRIENDLY creature for our local player, and ENEMY for our opponent.
+        boardCard.GetComponent<FieldCard>().casterType = Player.gameManager.isOurTurn ? Target.FRIENDLIES : Target.ENEMIES;
+        boardCard.transform.SetParent(Player.gameManager.isOurTurn ? Player.gameManager.playerField.content : Player.gameManager.enemyField.content, false);
+        if(Player.gameManager.isOurTurn) Player.gameManager.playerWallet.RemoveCard(index); // Update player's wallet
+        //else //Player.gameManager.enemyWallet.RemoveCard(index);
     }
 
     public void RestartHand(int[] indexes){
@@ -147,6 +137,26 @@ public class Deck : NetworkBehaviour
         if (isServer) RpcClearClientHand(indexes);
     }
 
+      [ClientRpc]
+    void RpcClearClientHand(int[] indexes)
+    {   
+
+        if(Player.gameManager.isRefreshing){
+            PlayerHand playerHand = Player.gameManager.playerHand;
+            int size = playerHand.handContent.transform.childCount;
+            for(int i = 0; i < size; i++)
+            {
+                playerHand.RemoveCard(i);
+            }
+
+            for(int i = 0; i < 3; i++)
+            {
+                playerHand.AddCardDirectly(deckList[indexes[i]], i);
+            }
+        }
+    }
+
+
     [Command(ignoreAuthority = true)]
     public void CmdChangeMana(int amount)
     {
@@ -165,48 +175,7 @@ public class Deck : NetworkBehaviour
 
             RestartHand(indexes);
 
-            /* for (int i = 0; i < player.deck.hand.Count; i++)
-            {
-                Debug.Log(player.username + " has " + hand[i].name + " in hand as " + i);
-            } */
-
-            /* Debug.Log("server side size " + player.deck.hand.Count + " first card " + player.deck.hand[0].name);
-            Debug.Log(player.username + " gained 1 mana. Total mana: " + player.mana);
-            Debug.Log(player.username + " has " + player.deck.hand.Count + " cards " + player.deck.hand[0].name +" " + player.deck.hand[1].name + " " + player.deck.hand[2].name + " in hand"); */
-
             if (isServer) RpcClearClientHand(indexes);
-        }
-    }
-
-    [ClientRpc]
-    void RpcClearClientHand(int[] indexes)
-    {   
-
-        //Debug.Log(Player.localPlayer.username + " " + player.username + " " + Player.gameManager.isRefreshing);
-
-        if(Player.gameManager.isRefreshing){
-
-            //Debug.Log("client side size " + hand.Count + " first card " + hand[0].name);
-
-            PlayerHand playerHand = Player.gameManager.playerHand;
-            int size = playerHand.handContent.transform.childCount;
-
-            /* for (int i = 0; i < hand.Count; i++)
-            {
-                Debug.Log(player.username + " has " + hand[i].name + " in hand as " + i);
-            } */
-
-            for(int i = 0; i < size; i++)
-            {
-                playerHand.RemoveCard(i);
-            }
-
-            for(int i = 0; i < 3; i++)
-            {
-                playerHand.AddCardDirectly(deckList[indexes[i]], i);
-            }
-
-            //Player.gameManager.isRefreshing = false;  
         }
     }
 
@@ -217,8 +186,7 @@ public class Deck : NetworkBehaviour
         wallet.Add(hand[index]);
         hand.RemoveAt(index);
         if (isServer) RpcRemoveCardFromHand(index);
-
-        if(hand.Count == 0){
+       if(hand.Count == 0){
             int[] arr = new int[3];
             RestartHand(arr);
             RpcClearClientHand(arr);
@@ -228,9 +196,7 @@ public class Deck : NetworkBehaviour
     [ClientRpc]
     void RpcRemoveCardFromHand(int index)
     {   
-        //Debug.Log("1Removing card " + hand[index].name + " at index " + index);
         if(Player.gameManager.isSpawning){
-            //Debug.Log("2Removing card " + hand[index].name + " at index " + index);
             PlayerHand playerHand = Player.gameManager.playerHand;
             playerHand.RemoveCard(index);  
         }
@@ -254,16 +220,73 @@ public class Deck : NetworkBehaviour
     public void CmdRemoveCardFromWallet(int index)
     {
 
-        //Debug.Log("00Size of the wallet " + wallet.Count);
-        /* for(int i = 0; i < wallet.Count; i++){
-            Debug.Log("Card " + i + " " + wallet[i].name);
-        } */
         wallet.RemoveAt(index);
-        /* for(int i = 0; i < wallet.Count; i++){
-            Debug.Log("Card " + i + " " + wallet[i].name);
-        } */
-        //Debug.Log("01Size of the wallet " + wallet.Count);
+    }
 
-        //if (isServer) RpcRemoveCardFromWallet(index);
+    public void PlayCardLocally(CardInfo card, int index)
+    {
+        CreatureCard creature = (CreatureCard)card.data;
+        GameObject boardCard = Instantiate(creature.cardPrefab.gameObject);
+        FieldCard newCard = boardCard.GetComponent<FieldCard>();
+        newCard.card = new CardInfo(card.data); // Save Card Info so we can re-access it later if we need to.
+        newCard.cardName.text = card.name;
+        newCard.health = creature.health;
+        newCard.strength = creature.strength;
+        newCard.image.sprite = card.image;
+        newCard.image.color = Color.white;
+
+        // If creature has charge, reduce waitTurn to 0 so they can attack right away.
+        if (creature.hasCharge) newCard.waitTurn = 0;
+
+        // Update the Card Info that appears when hovering
+        newCard.cardHover.UpdateFieldCardInfo(card);
+
+        // Set card to be an enemy for the local player (since AI is the opponent)
+        boardCard.GetComponent<FieldCard>().casterType = Target.ENEMIES;
+        boardCard.transform.SetParent(Player.gameManager.enemyField.content, false);
+
+        // Remove the card from the AI's wallet
+        wallet.RemoveAt(index);
+    }
+    [Command (ignoreAuthority = true)]
+    public void CmdUpdateAIBoughtCard()
+    {
+        if (isServer) RpcUpdateAIBoughtCard();
+    }
+
+    [ClientRpc]
+    void RpcUpdateAIBoughtCard()
+    {
+        if(player.hasEnemy){
+            Player.gameManager.enemyWallet.UpdateWalletUI();
+        }
+    }
+    
+     [Command (ignoreAuthority = true)]
+    public void CmdUpdatePlayerHand()
+    {
+         if (isServer) RpcUpdatePlayerHand();
+    }
+
+    [ClientRpc]
+    void RpcUpdatePlayerHand()
+    {
+       if(Player.localPlayer.firstPlayer == player.firstPlayer){
+            Player.gameManager.playerHand.UpdateHandUI();
+       }
+    }
+    
+    [Command (ignoreAuthority = true)]
+    public void CmdUpdateAIHand()
+    {
+         if (isServer) RpcUpdateAIHand();
+    }
+
+    [ClientRpc]
+    void RpcUpdateAIHand()
+    {
+        if(player.hasEnemy){
+            Player.gameManager.enemyHand.UpdateHandUI();
+        }
     }
 }

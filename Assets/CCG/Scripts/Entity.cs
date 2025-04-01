@@ -45,23 +45,56 @@ public abstract partial class Entity : NetworkBehaviour
         arrowObject.GetComponent<TargetingArrow>().DrawLine(this, card, spawnPos, IsAbility);
     }
 
+    // Scripts/Entity.cs
     [ClientRpc]
     public void RpcDie()
     {
-        PlayerPrefs.SetInt("playerHealth", Player.localPlayer.combat.entity.health);
-        if(!Player.gameManager.isOurTurn) PlayerPrefs.SetInt("playerHealth", -1);
-        NetworkManager.singleton.StopHost();
-        Destroy(NetworkManager.singleton.gameObject);
+        Debug.Log("RpcDie called on " + gameObject.name);
+        if(gameObject.name == Player.localPlayer.username){
+            PlayerPrefs.SetInt("isPlayerWinner", 0);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+            print("Player died. Loading end game scene.");
+        }
+        else if(gameObject.name == Player.localPlayer.enemyInfo.username){
+            PlayerPrefs.SetInt("isPlayerWinner", 1);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+            print("Enemy player died. Loading end game scene.");
+        }
+        else if(gameObject.name =="AI Player"){
+            PlayerPrefs.SetInt("isPlayerWinner", 1);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+            print("AI Player died. Loading end game scene.");
+        }
+
         Destroy(gameObject);
-        UnityEngine.SceneManagement.SceneManager.LoadScene(2, UnityEngine.SceneManagement.LoadSceneMode.Single);
+
+        /* if (isLocalPlayer)
+        {
+            Debug.Log("Local player died. Loading end game scene.");
+            PlayerPrefs.SetInt("isPlayerWinner", 0);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+        }
+        else
+        {
+            Debug.Log("Remote player died. Loading end game scene.");
+            Player player = GetComponent<Player>();
+            if (player != null && player.enemyInfo.health <= 0)
+            {
+                PlayerPrefs.SetInt("isPlayerWinner", 1);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(2);
+            }
+            //Destroy(NetworkManager.singleton.gameObject);
+            Destroy(gameObject);
+        } */
     }
 
-    public void DestroyTargetingArrow()
+    public virtual void DestroyTargetingArrow()
     {
         Player.localPlayer.isTargeting = false;
         isTargeting = false;
         Cursor.visible = true;
-        Destroy(arrowObject);
+        if(arrowObject != null) Destroy(arrowObject);
+        //Destroy(arrowObject);
     }
 
     public virtual void Update()
