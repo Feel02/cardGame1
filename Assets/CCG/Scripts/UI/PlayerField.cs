@@ -28,6 +28,7 @@ public class PlayerField : MonoBehaviour, IDropHandler
         if (player.IsOurTurn())
         {
             int index = card.handIndex;
+            Debug.Log("Card index: " + index);
             CardInfo cardInfo = player.deck.wallet[index];
             Player.gameManager.isSpawning = true;
             Player.gameManager.isHovering = false;

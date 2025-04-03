@@ -1,9 +1,5 @@
 using UnityEngine;
-using Mirror;
-using Unity.VisualScripting;
 using UnityEngine.EventSystems;
-using UnityEngine.XR;
-using System.Linq;
 using System;
 
 public class PlayerWallet : MonoBehaviour, IDropHandler
@@ -17,6 +13,16 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
     private int cardCount = 0; // Amount of cards in hand
     public Transform startingComp;
 
+    public ScriptableCard[] startDeck;
+    void Start(){
+        player = Player.localPlayer;
+        startDeck = new ScriptableCard[player.deck.startingDeck.Length];
+        for (int i = 0; i < player.deck.startingDeck.Length; i++)
+        {
+            startDeck[i] = player.deck.startingDeck[i].card;
+        }
+    }
+
     void Update()
     {
         player = Player.localPlayer;
@@ -29,6 +35,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
     }
 
     public void OnDrop(PointerEventData eventData){
+        Start();
         HandCard card = eventData.pointerDrag.transform.GetComponent<HandCard>();
         if (card == null) return;
 
@@ -56,7 +63,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
     }
 
     public void CheckIfSameCardExists(int index){
-        Debug.Log("Checking if same card exists");
+        //Debug.Log("Checking if same card exists");
         Player.gameManager.isSpawning = true;
         Player.gameManager.isHovering = false;
         Player.gameManager.CmdOnCardHover(0, index);
@@ -69,31 +76,35 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         //Debug.Log("2Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
 
         //create a scriptablecards array from the starting deck.card items
-        ScriptableCard[] startDeck = new ScriptableCard[player.deck.startingDeck.Length];
-        for (int i = 0; i < player.deck.startingDeck.Length; i++)
-        {
-            startDeck[i] = player.deck.startingDeck[i].card;
-        }
+        
 
         for (int i = 0; i < walletContent.childCount - 1; ++i)
         {
             HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
             if(slot.cardName.text == card.name){
-                if(Array.IndexOf(startDeck, card.data) == 0){ 
+                if(Array.IndexOf(startDeck, card.data) == 0){
+                    //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count); 
+                    //Debug.Log("Removing card " + walletContent.GetChild(player.deck.wallet.Count-1).GetComponent<HandCard>().cardName.text + " from wallet");
+                    RemoveCardById(walletContent.GetChild(player.deck.wallet.Count-1).GetComponent<HandCard>().GetInstanceID());
+                    //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
+                    //Debug.Log("Removing card " + slot.cardName.text + " from wallet");
+                    RemoveCardById(slot.GetInstanceID());
+                    //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
                     AddCardFromStartingDeck(1);
-                    RemoveCard(walletContent.childCount - 2);
-                    RemoveCard(i);
-                    player.deck.CmdRemoveCardFromWallet(walletContent.childCount - 2);
-                    player.deck.CmdRemoveCardFromWallet(i);
+                    //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
                     player.deck.CmdUpdatePlayerHand();
                     return;
                 }
                 else if(Array.IndexOf(startDeck, card.data) == 2){
+                    //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count); 
+                    //Debug.Log("Removing card " + walletContent.GetChild(player.deck.wallet.Count-1).GetComponent<HandCard>().cardName.text + " from wallet");
+                    RemoveCardById(walletContent.GetChild(player.deck.wallet.Count-1).GetComponent<HandCard>().GetInstanceID());
+                    //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
+                    //Debug.Log("Removing card " + slot.cardName.text + " from wallet");
+                    RemoveCardById(slot.GetInstanceID());
+                    //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
                     AddCardFromStartingDeck(3);
-                    RemoveCard(walletContent.childCount - 2);
-                    RemoveCard(i);
-                    player.deck.CmdRemoveCardFromWallet(walletContent.childCount - 2);
-                    player.deck.CmdRemoveCardFromWallet(i);
+                    //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
                     player.deck.CmdUpdatePlayerHand();
                     return;
                 }
@@ -113,15 +124,17 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         slot.isInWallet = true;
     }
     public void AddCardFromStartingDeck(int index){
+        //Debug.Log("4Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
         GameObject cardObj = Instantiate(cardPrefab.gameObject);
         cardObj.transform.SetParent(walletContent, false);
         HandCard slot = cardObj.GetComponent<HandCard>();
         CardInfo cardInfo = new CardInfo(player.deck.startingDeck[index].card, 1);
-        slot.AddCard(cardInfo, player.deck.wallet.Count + 1, playerType);       //walletContent.childCount - 1
+        slot.AddCard(cardInfo, player.deck.wallet.Count, playerType);       //walletContent.childCount - 1
         slot.cardOutline.gameObject.SetActive(false);
         slot.cardDragHover.canDrag = true;
         slot.isInWallet = true;
         player.deck.CmdAddCardToWallet(index);
+        //Debug.Log("4Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
     }
 
     public void RemoveCard(int index)
@@ -133,6 +146,29 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
             if (count == index){ slot.RemoveCard(); }
             else if (slot.handIndex > index) slot.handIndex--;
         }
+    }
+
+    public void RemoveCardById(int id)
+    {
+        //Debug.Log("3Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
+        for (int i = 0; i < walletContent.childCount; ++i)
+        {
+            HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
+            if (slot.GetInstanceID() == id){
+                player.deck.CmdRemoveCardFromWallet(i);
+                for (int j = i; j < walletContent.childCount; ++j)
+                {
+                    HandCard slot2 = walletContent.GetChild(j).GetComponent<HandCard>();
+                    int count = j;
+                    if (count == i) { slot2.RemoveCard(); }
+                    else if (slot2.handIndex > i) slot2.handIndex--;
+                }
+                //Debug.Log("33Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
+
+                return;
+            }
+        }
+        //Debug.Log("3Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
     }
 
 bool IsEnemyHand() => player && player.hasEnemy && playerType == PlayerType.ENEMY && enemyInfo.walletCount != cardCount;
