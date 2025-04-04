@@ -9,19 +9,25 @@ public class EndGameButtonScript : MonoBehaviour
     public Text endGameText;
     public void Start()
     {
-        int isPlayerWinner = PlayerPrefs.GetInt("isPlayerWinner", -1);
-        
-        if (isPlayerWinner == 1)
+        //int isPlayerWinner = PlayerPrefs.GetInt("isPlayerWinner", -1);
+
+        string winnerName = PlayerPrefs.GetString("winnerName", "No Winner");
+
+        if (winnerName == "AI Player")
+        {
+            endGameText.text = "You Lose!";
+        }
+        else if (winnerName == Player.localPlayer.username)
         {
             endGameText.text = "You Win!";
         }
-        else if (isPlayerWinner == 0)
+        else if (winnerName == Player.localPlayer.enemyInfo.username)
         {
             endGameText.text = "You Lose!";
         }
         else
         {
-            endGameText.text = "Game Over!";
+            endGameText.text = "You Lose!";
         }
     }
 
