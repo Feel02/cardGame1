@@ -51,17 +51,18 @@ public abstract partial class Entity : NetworkBehaviour
     {
         Debug.Log("RpcDie called on " + gameObject.name);
         if(gameObject.name == Player.localPlayer.username){
-            PlayerPrefs.SetInt("isPlayerWinner", 0);
+            //PlayerPrefs.SetInt("isPlayerWinner", 0);
+            PlayerPrefs.SetString("winnerName", Player.localPlayer.enemyInfo.username);
             UnityEngine.SceneManagement.SceneManager.LoadScene(2);
             print("Player died. Loading end game scene.");
         }
         else if(gameObject.name == Player.localPlayer.enemyInfo.username){
-            PlayerPrefs.SetInt("isPlayerWinner", 1);
+            PlayerPrefs.SetString("winnerName", Player.localPlayer.username);
             UnityEngine.SceneManagement.SceneManager.LoadScene(2);
             print("Enemy player died. Loading end game scene.");
         }
         else if(gameObject.name =="AI Player"){
-            PlayerPrefs.SetInt("isPlayerWinner", 1);
+            PlayerPrefs.SetString("winnerName", Player.localPlayer.username);
             UnityEngine.SceneManagement.SceneManager.LoadScene(2);
             print("AI Player died. Loading end game scene.");
         }
