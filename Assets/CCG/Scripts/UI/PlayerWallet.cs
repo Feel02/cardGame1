@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using System;
+using System.Collections;
+using Unity.VisualScripting;
 
 public class PlayerWallet : MonoBehaviour, IDropHandler
 {
@@ -14,15 +16,6 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
     public Transform startingComp;
 
     public ScriptableCard[] startDeck;
-    void Start(){
-        player = Player.localPlayer;
-        startDeck = new ScriptableCard[player.deck.startingDeck.Length];
-        for (int i = 0; i < player.deck.startingDeck.Length; i++)
-        {
-            startDeck[i] = player.deck.startingDeck[i].card;
-        }
-    }
-
     void Update()
     {
         player = Player.localPlayer;
@@ -35,7 +28,7 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
     }
 
     public void OnDrop(PointerEventData eventData){
-        Start();
+        UpdateStartDeck();
         HandCard card = eventData.pointerDrag.transform.GetComponent<HandCard>();
         if (card == null) return;
 
@@ -74,7 +67,6 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         //Debug.Log("1Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
         player.deck.CmdRemoveCardFromHand(index);
         //Debug.Log("2Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
-
         //create a scriptablecards array from the starting deck.card items
         
 
@@ -90,9 +82,12 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
                     //Debug.Log("Removing card " + slot.cardName.text + " from wallet");
                     RemoveCardById(slot.GetInstanceID());
                     //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
-                    AddCardFromStartingDeck(1);
+                    StartCoroutine(DelayedStartHost(1));
                     //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
-                    player.deck.CmdUpdatePlayerHand();
+                    //player.deck.CmdUpdatePlayerHand();
+                    cardCount--;
+                    UpdateWalletUI();
+                    //Debug.Log("Updating wallet UI " + player.deck.wallet.Count + " " + walletContent.childCount);
                     return;
                 }
                 else if(Array.IndexOf(startDeck, card.data) == 2){
@@ -103,14 +98,26 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
                     //Debug.Log("Removing card " + slot.cardName.text + " from wallet");
                     RemoveCardById(slot.GetInstanceID());
                     //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
-                    AddCardFromStartingDeck(3);
+                    StartCoroutine(DelayedStartHost(3));
                     //Debug.Log("5Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
-                    player.deck.CmdUpdatePlayerHand();
+                    //player.deck.CmdUpdatePlayerHand();
+                    cardCount--;
+                    UpdateWalletUI();
+                    //Debug.Log("Updating wallet UI " + player.deck.wallet.Count + " " + walletContent.childCount);
                     return;
                 }
             }
         }
-        player.deck.CmdUpdatePlayerHand();
+        //player.deck.CmdUpdatePlayerHand();
+        
+    }
+
+    IEnumerator DelayedStartHost(int num)
+    {
+        // Wait for half a second before starting the host
+        yield return new WaitForSeconds(0.1f);
+        AddCardFromStartingDeck(num);
+        //yield return new WaitForSeconds(1f);
     }
 
     public void AddCard(CardInfo card, int index, PlayerType type)
@@ -171,38 +178,63 @@ public class PlayerWallet : MonoBehaviour, IDropHandler
         //Debug.Log("3Size of The wallet " + walletContent.childCount + " " + player.deck.wallet.Count);
     }
 
-bool IsEnemyHand() => player && player.hasEnemy && playerType == PlayerType.ENEMY && enemyInfo.walletCount != cardCount;
-bool IsPlayerHand() => player && playerType == PlayerType.PLAYER;
-    public void UpdateWalletUI()
-    {
-    if (player && player.hasEnemy && playerType == PlayerType.ENEMY)
+    bool IsEnemyHand() => player && player.hasEnemy && playerType == PlayerType.ENEMY && enemyInfo.walletCount != cardCount;
+    bool IsPlayerHand() => player && playerType == PlayerType.PLAYER;
+    public void UpdateStartDeck(){
+        player = Player.localPlayer;
+
+        if (startDeck != null) Array.Clear(startDeck, 0, startDeck.Length);
+        startDeck = new ScriptableCard[player.deck.startingDeck.Length];
+        for (int i = 0; i < player.deck.startingDeck.Length; i++)
         {
-            if(enemyInfo.walletCount != cardCount)
-            {
+            //Debug.Log("Adding card " + player.deck.startingDeck[i].card.name + " to start deck");
+            startDeck[i] = player.deck.startingDeck[i].card;
+        }
+    }
+    public void UpdateWalletUI(){
+        if (player && player.hasEnemy && playerType == PlayerType.ENEMY){
+            if(enemyInfo.walletCount != cardCount){
                 cardCount = enemyInfo.walletCount;
                 UIUtils.BalancePrefabs(cardPrefab.gameObject, enemyInfo.walletCount, walletContent);
-                for (int i = 0; i < enemyInfo.walletCount; ++i)
-                {
+                for (int i = 0; i < enemyInfo.walletCount; ++i){
                     HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
                     slot.AddCardBack();
                 }
             }
         }
-        else if (player && playerType == PlayerType.PLAYER)
-        {
-            if(player.deck.wallet.Count != cardCount)
-            {
-                cardCount = player.deck.wallet.Count;
+        else if (player && playerType == PlayerType.PLAYER){
+            if (player.deck.wallet.Count != walletContent.childCount){
+                //Debug.Log("------------------------------------------");
+                //Debug.Log("Updating wallet UI " + player.deck.wallet.Count + " " + walletContent.childCount);
+                /* for(int i = 0; i < player.deck.wallet.Count; ++i){
+                    Debug.Log("Wallet card " + player.deck.wallet[i].data.cardName);
+                }
+                for (int i = 0; i < walletContent.childCount; ++i){
+                    Debug.Log("Wallet card " + walletContent.GetChild(i).GetComponent<HandCard>().cardName.text);    
+                } */
+                //Debug.Log("------------------------------------------");
+                int cardCount = player.deck.wallet.Count;
+                // Create new cards based on the current hand size
                 UIUtils.BalancePrefabs(cardPrefab.gameObject, player.deck.wallet.Count, walletContent);
-                for (int i = 0; i < player.deck.wallet.Count; i++)
-                {
-                HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
-                slot.AddCard(player.deck.wallet[i], i, playerType);
+                for (int i = 0; i < player.deck.wallet.Count; i++){
+                    HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
+                    slot.AddCard(player.deck.wallet[i], i, playerType);
                     slot.cardOutline.gameObject.SetActive(false);
                     slot.cardDragHover.canDrag = true;
                     slot.isInWallet = true;
                 }
             }
+            /* if(player.deck.wallet.Count != cardCount){
+                cardCount = player.deck.wallet.Count;
+                UIUtils.BalancePrefabs(cardPrefab.gameObject, player.deck.wallet.Count, walletContent);
+                for (int i = 0; i < player.deck.wallet.Count; i++){
+                    HandCard slot = walletContent.GetChild(i).GetComponent<HandCard>();
+                    slot.AddCard(player.deck.wallet[i], i, playerType);
+                    slot.cardOutline.gameObject.SetActive(false);
+                    slot.cardDragHover.canDrag = true;
+                    slot.isInWallet = true;
+                }
+            } */
         }
     }
 }

@@ -1376,7 +1376,8 @@ namespace Mirror
             {
                 // Ready/AddPlayer is usually triggered by a scene load completing. if no scene was loaded, then Ready/AddPlayer it here instead.
                 if (!ClientScene.ready) ClientScene.Ready(conn);
-                if (autoCreatePlayer)
+                // Check for a Player before adding another one
+                if (conn.identity == null && autoCreatePlayer)
                 {
                     ClientScene.AddPlayer(conn);
                 }

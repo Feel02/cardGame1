@@ -48,7 +48,7 @@ public class FieldCard : Entity
     [Command(ignoreAuthority = true)]
     public void CmdUpdateWaitTurn()
     {
-        Debug.LogError("Here");
+        //Debug.LogError("Here");
         if (waitTurn > 0) waitTurn--;
     }
 }
