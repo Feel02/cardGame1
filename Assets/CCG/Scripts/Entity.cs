@@ -67,6 +67,15 @@ public abstract partial class Entity : NetworkBehaviour
             print("AI Player died. Loading end game scene.");
         }
 
+        if (NetworkServer.active)
+        {
+            NetworkManager.singleton.StopHost();
+        }
+        else if (NetworkClient.isConnected)
+        {
+            NetworkManager.singleton.StopClient();
+        }
+
         Destroy(gameObject);
 
         /* if (isLocalPlayer)
