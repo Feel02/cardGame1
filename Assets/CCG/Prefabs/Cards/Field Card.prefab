@@ -253,6 +253,7 @@ GameObject:
   - component: {fileID: 404516835221399959}
   - component: {fileID: 2207425812264621529}
   - component: {fileID: 2445451060290061407}
+  - component: {fileID: 1115090739117212302}
   m_Layer: 8
   m_Name: Field Card
   m_TagString: Untagged
@@ -325,6 +326,7 @@ MonoBehaviour:
   readyColor: {r: 0, g: 1, b: 0.11764706, a: 0.39215687}
   targetColor: {r: 0.98039216, g: 0.01960382, b: 0, a: 0.39215687}
   cardHover: {fileID: 1731655614884413486}
+  cardAnimation: {fileID: 0}
 --- !u!222 &8867336146261718053
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -436,6 +438,21 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 300, y: 300}
   m_EdgeRadius: 0
+--- !u!114 &1115090739117212302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4180526956830664783}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a42d602858ed05c4e8bbaeb011f0dd59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  glowImage: {fileID: 0}
+  hurtColor: {r: 1, g: 0.5, b: 0, a: 0.5}
+  deathColor: {r: 1, g: 0, b: 0, a: 0.5}
 --- !u!1 &5254931356280482084
 GameObject:
   m_ObjectHideFlags: 0

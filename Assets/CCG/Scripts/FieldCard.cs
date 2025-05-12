@@ -21,6 +21,15 @@ public class FieldCard : Entity
     [Header("Card Hover")]
     public HandCard cardHover;
 
+    [Header("Card Animation")]
+    public CardAnimation cardAnimation;
+
+    private void Awake()
+    {
+        if (cardAnimation == null)
+            cardAnimation = GetComponent<CardAnimation>();
+    }
+
     // Update is called once per frame
     public override void Update()
     {
