@@ -32,12 +32,6 @@ public class Combat : NetworkBehaviour
                 entity.health = 0;
                 Debug.Log("Entity " + entity.gameObject.name + " health is now zero or less.  Calling RpcDie.");
                 entity.RpcDie();
-                // Restart server if this is a player and we are the server
-                if (NetworkServer.active && entity is Player)
-                {
-                    var nm = (NetworkManagerCCG)NetworkManager.singleton;
-                    nm.RestartServer();
-                }
             }
         }
         else
