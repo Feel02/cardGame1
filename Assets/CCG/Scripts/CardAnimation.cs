@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 
 public class CardAnimation : MonoBehaviour
 {
@@ -8,6 +9,44 @@ public class CardAnimation : MonoBehaviour
     public Color hurtColor = new Color(1f, 0.5f, 0f, 0.5f); // Orange
     public Color deathColor = new Color(1f, 0f, 0f, 0.5f); // Red
     public Transform shakeContainer; // Assign in inspector
+    public Image overlayImage; // Overlay for full-card flash
+
+    public void Awake()
+    {
+        // Only create overlay if it doesn't exist
+        if (overlayImage == null)
+        {
+            // Find the root FieldCard RectTransform
+            RectTransform rootRect = GetComponentInParent<FieldCard>()?.GetComponent<RectTransform>();
+            if (rootRect == null)
+                rootRect = GetComponent<RectTransform>();
+
+            // Check if already present
+            Transform existing = transform.Find("CardOverlay");
+            if (existing != null)
+            {
+                overlayImage = existing.GetComponent<Image>();
+            }
+            else
+            {
+                // Create overlay
+                GameObject overlayObj = new GameObject("CardOverlay");
+                overlayObj.transform.SetParent(transform, false);
+                overlayImage = overlayObj.AddComponent<Image>();
+                overlayImage.color = new Color(1f, 0f, 0f, 0f); // Transparent red
+                overlayImage.raycastTarget = false;
+
+                // Set overlay size to match root card
+                var rt = overlayObj.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = rootRect.rect.size;
+                rt.anchoredPosition = Vector2.zero;
+                rt.localScale = Vector3.one;
+                overlayObj.transform.SetAsLastSibling();
+            }
+        }
+    }
 
     public void PlayHurtAnimation()
     {
@@ -46,21 +85,75 @@ public class CardAnimation : MonoBehaviour
 
     IEnumerator DeathRoutine()
     {
-        // Red glow fade
-        yield return StartCoroutine(FadeGlow(deathColor, 1f));
-
-        // Split animation (simple example: scale X to 0)
-        float splitDuration = 0.5f;
+        // Flash and scale at the same time
+        float duration = 0.5f;
         Vector3 originalScale = transform.localScale;
-        float elapsed = 0f;
-        while (elapsed < splitDuration)
+        Image targetImage = glowImage;
+        if (targetImage == null)
         {
-            float t = elapsed / splitDuration;
-            transform.localScale = new Vector3(Mathf.Lerp(originalScale.x, 0, t), originalScale.y, originalScale.z);
+            // Try to get FieldCard's image
+            var fieldCard = GetComponent<FieldCard>();
+            if (fieldCard != null)
+                targetImage = fieldCard.image;
+        }
+        if (targetImage == null)
+            yield break;
+
+        Color originalColor = targetImage.color;
+        Color flashColor = deathColor;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            // Scale down
+            float scale = Mathf.Lerp(1f, 0f, t);
+            transform.localScale = new Vector3(scale, scale, originalScale.z);
+            // Flash red (fade out alpha)
+            float alpha = Mathf.Lerp(flashColor.a, 0, t);
+            targetImage.color = new Color(flashColor.r, flashColor.g, flashColor.b, alpha);
             elapsed += Time.deltaTime;
             yield return null;
         }
-        // Optionally destroy or disable the card here
+        // Ensure final state
+        transform.localScale = new Vector3(0, 0, originalScale.z);
+        targetImage.color = originalColor;
+    }
+
+    IEnumerator FlashAllComponents(Color flashColor, float duration)
+    {
+        // Find all UI components
+        var images = GetComponentsInChildren<UnityEngine.UI.Image>(true);
+        var texts = GetComponentsInChildren<UnityEngine.UI.Text>(true);
+
+        // Store original colors
+        var originalImageColors = new Dictionary<UnityEngine.UI.Image, Color>();
+        var originalTextColors = new Dictionary<UnityEngine.UI.Text, Color>();
+
+        foreach (var img in images)
+            originalImageColors[img] = img.color;
+        foreach (var txt in texts)
+            originalTextColors[txt] = txt.color;
+
+        // Set flash color
+        foreach (var img in images)
+            img.color = flashColor;
+        foreach (var txt in texts)
+            txt.color = flashColor;
+
+        // Wait for duration
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Restore original colors
+        foreach (var kvp in originalImageColors)
+            kvp.Key.color = kvp.Value;
+        foreach (var kvp in originalTextColors)
+            kvp.Key.color = kvp.Value;
     }
 
     IEnumerator FadeGlow(Color color, float duration)
@@ -87,5 +180,22 @@ public class CardAnimation : MonoBehaviour
             yield return null;
         }
         targetImage.color = originalColor;
+    }
+
+    IEnumerator FadeOverlay(Color color, float duration)
+    {
+        if (overlayImage == null)
+            yield break;
+        Color startColor = new Color(color.r, color.g, color.b, color.a);
+        Color endColor = new Color(color.r, color.g, color.b, 0f);
+        overlayImage.color = startColor;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            overlayImage.color = Color.Lerp(startColor, endColor, elapsed / duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        overlayImage.color = endColor;
     }
 }

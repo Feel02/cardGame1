@@ -450,9 +450,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a42d602858ed05c4e8bbaeb011f0dd59, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  glowImage: {fileID: 0}
+  glowImage: {fileID: 880053228593563035}
   hurtColor: {r: 1, g: 0.5, b: 0, a: 0.5}
   deathColor: {r: 1, g: 0, b: 0, a: 0.5}
+  shakeContainer: {fileID: 5531385703871905962}
 --- !u!1 &5254931356280482084
 GameObject:
   m_ObjectHideFlags: 0
