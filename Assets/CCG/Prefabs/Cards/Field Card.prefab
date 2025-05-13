@@ -454,6 +454,7 @@ MonoBehaviour:
   hurtColor: {r: 1, g: 0.5, b: 0, a: 0.5}
   deathColor: {r: 1, g: 0, b: 0, a: 0.5}
   shakeContainer: {fileID: 5531385703871905962}
+  overlayImage: {fileID: 0}
 --- !u!1 &5254931356280482084
 GameObject:
   m_ObjectHideFlags: 0
