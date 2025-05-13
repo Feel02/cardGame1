@@ -81,6 +81,9 @@ public class CardAnimation : MonoBehaviour
 
         // Orange glow fade
         yield return StartCoroutine(FadeGlow(hurtColor, 1f));
+
+        // Force rerender of both fields after animation
+        ForceFieldRerender();
     }
 
     IEnumerator DeathRoutine()
@@ -197,5 +200,17 @@ public class CardAnimation : MonoBehaviour
             yield return null;
         }
         overlayImage.color = endColor;
+    }
+
+    void ForceFieldRerender()
+    {
+        var gm = FindObjectOfType<GameManager>();
+        if (gm != null)
+        {
+            if (gm.playerField != null && gm.playerField.content != null)
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(gm.playerField.content.GetComponent<RectTransform>());
+            if (gm.enemyField != null && gm.enemyField.content != null)
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(gm.enemyField.content.GetComponent<RectTransform>());
+        }
     }
 }

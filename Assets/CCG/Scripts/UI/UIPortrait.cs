@@ -22,6 +22,10 @@ public partial class UIPortrait : MonoBehaviour
 
     private PlayerInfo enemyInfo;
 
+    // Static fields to track last health for PLAYER and ENEMY
+    private static int lastPlayerHealth = -1;
+    private static int lastEnemyHealth = -1;
+
     void Awake()
     {
         if (panel != null)
@@ -45,6 +49,11 @@ public partial class UIPortrait : MonoBehaviour
             health.text = player.health.ToString();
             mana.text = player.mana.ToString();
             player.spawnOffset = portrait.transform;
+
+            // Play animation if health changed
+            if (lastPlayerHealth != -1 && lastPlayerHealth > player.health)
+                PlayHurtAnimationUI();
+            lastPlayerHealth = player.health;
         }
         else if (player && player.hasEnemy && playerType == PlayerType.ENEMY)
         {
@@ -58,6 +67,11 @@ public partial class UIPortrait : MonoBehaviour
             health.text = enemyInfo.health.ToString();
             mana.text = enemyInfo.mana.ToString();
             enemyInfo.data.spawnOffset = portrait.transform;
+
+            // Play animation if health changed
+            if (lastEnemyHealth != -1 && lastEnemyHealth > enemyInfo.health)
+                PlayHurtAnimationUI();
+            lastEnemyHealth = enemyInfo.health;
         }
         else
         {
@@ -70,6 +84,17 @@ public partial class UIPortrait : MonoBehaviour
     {
         if (!isAnimating && panel != null)
             StartCoroutine(HurtRoutineUI());
+    }
+
+    // NEW: Static method to shake the correct portrait by PlayerType
+    public static void ShakePortrait(PlayerType type)
+    {
+        var portraits = GameObject.FindObjectsOfType<UIPortrait>();
+        foreach (var portrait in portraits)
+        {
+            if (portrait.playerType == type)
+                portrait.PlayHurtAnimationUI();
+        }
     }
 
     private IEnumerator HurtRoutineUI()

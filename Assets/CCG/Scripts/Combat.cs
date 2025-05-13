@@ -31,7 +31,10 @@ public class Combat : NetworkBehaviour
         if (entity is FieldCard fieldCard && amount < 0 && entity.health > 0)
         {
             if (fieldCard.cardAnimation != null)
+            {
                 fieldCard.cardAnimation.PlayHurtAnimation();
+                RpcPlayHurtAnimation(fieldCard.netId);
+            }
         }
 
         // Play hurt animation on player portrait if this is a Player and took damage
@@ -40,22 +43,14 @@ public class Combat : NetworkBehaviour
             // Local player
             if (playerEntity == Player.localPlayer)
             {
-                var portrait = GameObject.FindObjectOfType<UIPortrait>();
-                if (portrait != null && portrait.playerType == PlayerType.PLAYER)
-                    portrait.PlayHurtAnimationUI();
+                UIPortrait.ShakePortrait(PlayerType.PLAYER);
+                RpcPlayPlayerHurtAnimation((int)PlayerType.PLAYER);
             }
             // Enemy player
             else if (Player.localPlayer != null && playerEntity == Player.localPlayer.enemyInfo.data)
             {
-                var portraits = GameObject.FindObjectsOfType<UIPortrait>();
-                foreach (var portrait in portraits)
-                {
-                    if (portrait.playerType == PlayerType.ENEMY)
-                    {
-                        portrait.PlayHurtAnimationUI();
-                        break;
-                    }
-                }
+                UIPortrait.ShakePortrait(PlayerType.ENEMY);
+                RpcPlayPlayerHurtAnimation((int)PlayerType.ENEMY);
             }
         }
 
@@ -86,6 +81,7 @@ public class Combat : NetworkBehaviour
                 if (entity is FieldCard fc && fc.cardAnimation != null)
                 {
                     fc.StartCoroutine(PlayDeathAndDestroy(fc));
+                    RpcPlayDeathAnimation(fc.netId);
                 }
                 else
                 {
@@ -113,5 +109,35 @@ public class Combat : NetworkBehaviour
     public void CmdIncreaseWaitTurn()
     {
         entity.waitTurn++;
+    }
+
+    [ClientRpc]
+    void RpcPlayHurtAnimation(uint netId)
+    {
+        var obj = Mirror.NetworkIdentity.spawned[netId];
+        if (obj != null)
+        {
+            var fc = obj.GetComponent<FieldCard>();
+            if (fc != null && fc.cardAnimation != null)
+                fc.cardAnimation.PlayHurtAnimation();
+        }
+    }
+
+    [ClientRpc]
+    void RpcPlayDeathAnimation(uint netId)
+    {
+        var obj = Mirror.NetworkIdentity.spawned[netId];
+        if (obj != null)
+        {
+            var fc = obj.GetComponent<FieldCard>();
+            if (fc != null && fc.cardAnimation != null)
+                fc.cardAnimation.PlayDeathAnimation();
+        }
+    }
+
+    [ClientRpc]
+    void RpcPlayPlayerHurtAnimation(int playerTypeInt)
+    {
+        UIPortrait.ShakePortrait((PlayerType)playerTypeInt);
     }
 }
