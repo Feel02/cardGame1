@@ -34,6 +34,9 @@ public class FieldCard : Entity
     public override void Update()
     {
         base.Update();
+        // Always reset image color to white to fix any alpha issues
+        if (image != null)
+            image.color = Color.white;
         // If we have a card but no sprite, make sure the sprite is up to date since we can't SyncVar the sprite.
         // Useful to avoid bugs when a player was offline when the card spawned, or if they reconnected.
         if (image.sprite == null && (card.name != null || cardName.text == ""))

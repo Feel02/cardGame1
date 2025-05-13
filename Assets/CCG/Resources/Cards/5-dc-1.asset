@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 992a434fee04c2f47bebd224e2fb0dee, type: 3}
+  m_Name: 5-dc-1
+  m_EditorClassIdentifier: 
+  id: fb4adc920af6fcc699517b371560f4be
+  image: {fileID: 21300000, guid: 84897102a87f37b4ebbbbc9c8a1b7c37, type: 3}
+  cost: 3
+  category: 
+  cardName: Dendritiformis
+  intiatives: []
+  hasInitiative: 0
+  description: An antigen-getter white blood cell that is a messenger between the
+    innate and adaptive immune systems.
+  strength: 3
+  health: 1
+  acceptableTargets: 0301
+  creatureType: 
+  hasCharge: 0
+  hasTaunt: 0
+  amount: 1
+  deathcrys: []
+  hasDeathCry: 0
+  cardPrefab: {fileID: 3966246863333951121, guid: 66532acc9bfbbe043b5ef65a717193da, type: 3}

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 992a434fee04c2f47bebd224e2fb0dee, type: 3}
+  m_Name: 16-as-1
+  m_EditorClassIdentifier: 
+  id: cb737c6ab9422bbf081352ddddb52323
+  image: {fileID: 21300000, guid: 948da7992ff7bd44f9fd7d160ae7d496, type: 3}
+  cost: 3
+  category: 
+  cardName: Anisakis
+  intiatives: []
+  hasInitiative: 0
+  description: A parasitic worm found in raw or undercooked fish that can cause stomach
+    pain, nausea, or allergic reactions when eaten.
+  strength: 4
+  health: 1
+  acceptableTargets: 0301
+  creatureType: 
+  hasCharge: 0
+  hasTaunt: 0
+  amount: 1
+  deathcrys: []
+  hasDeathCry: 0
+  cardPrefab: {fileID: 3966246863333951121, guid: 66532acc9bfbbe043b5ef65a717193da, type: 3}

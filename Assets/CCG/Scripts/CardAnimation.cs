@@ -164,13 +164,9 @@ public class CardAnimation : MonoBehaviour
         Image targetImage = glowImage;
         if (targetImage == null)
         {
-            // Try to get FieldCard's image
-            var fieldCard = GetComponent<FieldCard>();
-            if (fieldCard != null)
-                targetImage = fieldCard.image;
-        }
-        if (targetImage == null)
+            // Do not fade the main card art! Just skip the fade if no glowImage is set.
             yield break;
+        }
 
         Color originalColor = targetImage.color;
         targetImage.color = color;

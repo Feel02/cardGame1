@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 992a434fee04c2f47bebd224e2fb0dee, type: 3}
+  m_Name: 18-pa-1
+  m_EditorClassIdentifier: 
+  id: 83dc89f7f9ebff492be17dfefbb01f57
+  image: {fileID: 21300000, guid: dbe3b5b08c05b8941a2b3ab87edb6157, type: 3}
+  cost: 2
+  category: 
+  cardName: Pseudomonas aeruginosa
+  intiatives: []
+  hasInitiative: 0
+  description: A tough, rod-shaped bacterium that can live almost anywhere and make
+    people who are already sick or have wounds more sick.
+  strength: 4
+  health: 2
+  acceptableTargets: 0301
+  creatureType: 
+  hasCharge: 0
+  hasTaunt: 0
+  amount: 1
+  deathcrys: []
+  hasDeathCry: 0
+  cardPrefab: {fileID: 3966246863333951121, guid: 66532acc9bfbbe043b5ef65a717193da, type: 3}
