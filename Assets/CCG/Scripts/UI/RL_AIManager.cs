@@ -196,15 +196,29 @@ public class RL_AIManager : MonoBehaviour
 
     string GetState()
     {
-        string state = string.Format("({0}, {1}, {2}, {3}, {4})",
-            aiPlayer.mana,
-            aiPlayer.health,
-            Player.localPlayer.health,
-            GetAICreatureCount(),
-            GetPlayerCreatureCount()
-        );
-        Debug.Log("Unity State: " + state);
-        return state;
+        List<int> state = new List<int>();
+        state.Add(aiPlayer.mana); // coins
+        state.Add(aiPlayer.health); // your_health
+        state.Add(Player.localPlayer.health); // opp_health
+
+        // Hand cards (up to 3)
+        for (int i = 0; i < 3; i++)
+        {
+            if (i < aiPlayer.deck.hand.Count)
+            {
+                var card = aiPlayer.deck.hand[i];
+                state.Add(card.strength); // attack
+                state.Add(card.health);   // health
+                state.Add(card.price);    // price
+            }
+            else
+            {
+                state.Add(0); state.Add(0); state.Add(0);
+            }
+        }
+        string stateString = "(" + string.Join(", ", state) + ")";
+        Debug.Log("Unity State: " + stateString);
+        return stateString;
     }
 
     int GetAICreatureCount()
