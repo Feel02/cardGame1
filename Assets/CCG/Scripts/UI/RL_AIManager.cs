@@ -6,6 +6,7 @@ using System.Linq;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections;
 
 public class RL_AIManager : MonoBehaviour
 {
@@ -34,6 +35,9 @@ public class RL_AIManager : MonoBehaviour
     // Save/Load File Path (only used if not using the pre-trained Q-table)
     private string saveFilePath;
     private int turnCount = 0;
+    
+    // Reference to waiting screen
+    private WaitingScreen waitingScreen;
 
     void Start()
     {
@@ -42,7 +46,28 @@ public class RL_AIManager : MonoBehaviour
         {
             Debug.LogError("AIManager: Player component missing!");
             enabled = false;
+            return;
         }
+        
+        // Show loading screen while loading Q-table
+        StartCoroutine(InitializeWithLoadingScreen());
+    }
+    
+    IEnumerator InitializeWithLoadingScreen()
+    {
+        // Try to find the waiting screen or create it if it doesn't exist
+        waitingScreen = WaitingScreen.Instance;
+        if (waitingScreen == null)
+        {
+            waitingScreen = WaitingScreenSetup.EnsureWaitingScreenExists();
+        }
+        
+        if (waitingScreen != null)
+        {
+            waitingScreen.ShowWithMessage("LOADING AI");
+        }
+        
+        yield return null; // Wait a frame to ensure UI updates
         
         // If using a pre-trained Q-table, load from Resources.
         if (usePretrainedQTable)
@@ -57,10 +82,17 @@ public class RL_AIManager : MonoBehaviour
         
         Debug.Log("Q-Table initialization complete.");
 
+        // Load avatar
         Sprite[] sprites = Resources.LoadAll<Sprite>("Portraits/Trainer");
         print(sprites.Length);
         aiPlayer.portrait = sprites[8];
         aiPlayer.username = "AI Player";
+        
+        // Hide loading screen
+        if (waitingScreen != null)
+        {
+            waitingScreen.Hide();
+        }
     }
 
     void OnDestroy()
@@ -693,6 +725,11 @@ public class RL_AIManager : MonoBehaviour
     // Update LoadQTable to match Python format
     public void LoadQTable()
     {
+        if (waitingScreen != null)
+        {
+            waitingScreen.ShowWithMessage("LOADING Q-TABLE");
+        }
+        
         if (File.Exists(saveFilePath))
         {
             try
@@ -728,6 +765,11 @@ public class RL_AIManager : MonoBehaviour
     }
     public void LoadPretrainedQTable()
     {
+        if (waitingScreen != null)
+        {
+            waitingScreen.ShowWithMessage("LOADING REINFORCEMENT AI");
+        }
+        
         TextAsset qTableAsset = Resources.Load<TextAsset>("rl_agent_qtable"); // Place your file in Resources folder without extension
         if (qTableAsset != null)
         {

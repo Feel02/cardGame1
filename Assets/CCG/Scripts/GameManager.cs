@@ -43,6 +43,36 @@ public class GameManager : NetworkBehaviour
     public TimerScript timer; // Reference to the TimerScript
 
     public SyncListPlayerInfo players = new SyncListPlayerInfo(); // Information of all players online. One is player, other is opponent.
+    
+    // Reference to our waiting screen
+    private WaitingScreen waitingScreen;
+    
+    // Start is called before the first frame update
+    void Start()
+    {
+        // Initialize the waiting screen if in online mode
+        if (PlayerPrefs.GetInt("offlineMode", 0) != 1)
+        {
+            // We call this in Start so it works whether or not this is a client
+            waitingScreen = WaitingScreenSetup.EnsureWaitingScreenExists();
+            Debug.Log("Waiting screen initialized in Start");
+        }
+    }
+    
+    // Called when the script instance is being loaded as a client
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        
+        Debug.Log("OnStartClient called in GameManager");
+        
+        // Double-check to ensure waiting screen exists
+        if (PlayerPrefs.GetInt("offlineMode", 0) != 1 && waitingScreen == null)
+        {
+            waitingScreen = WaitingScreenSetup.EnsureWaitingScreenExists();
+            Debug.Log("Waiting screen initialized in OnStartClient");
+        }
+    }
 
     // Not sent from Player / Object with Authority, so we need to ignoreAuthority. 
     // We could also have this command run on the Player instead
