@@ -296,11 +296,32 @@ def q_ai_turn(game: Game):
                 else:
                     attack_player_chance = 0.2
                 if game.opponent_player.board and random.random() > attack_player_chance:
-                    # Find the best target: maximize (enemy_card.health - my_card.attack) + (enemy_card.attack - my_card.health)
+                    # Improved heuristic for attack target selection
                     best_score = float('-inf')
                     best_index = 0
                     for j, enemy_card in enumerate(game.opponent_player.board):
-                        score = (enemy_card.health - card.attack) + (enemy_card.attack - card.health)
+                        # Will my card kill the enemy?
+                        will_enemy_die = card.attack >= enemy_card.health
+                        # Will my card survive?
+                        will_i_survive = enemy_card.attack < card.health
+                        # Overkill amount (how much extra attack is wasted)
+                        overkill = max(0, card.attack - enemy_card.health)
+                        # Prefer using the weakest card that can kill the enemy
+                        # Score: +100 for kill+survive, +20 for both die, -50 for lose my card, -overkill penalty
+                        score = 0
+                        if will_enemy_die and will_i_survive:
+                            score += 100
+                        elif will_enemy_die and not will_i_survive:
+                            score += 20
+                        elif not will_enemy_die and not will_i_survive:
+                            score -= 50
+                        # Bonus for killing high-value enemy
+                        if will_enemy_die:
+                            score += enemy_card.attack + enemy_card.health
+                        # Penalize overkill
+                        score -= overkill
+                        # Prefer using lower attack cards for weak enemies
+                        score -= card.attack * (1 if enemy_card.health == 1 else 0)
                         if score > best_score:
                             best_score = score
                             best_index = j

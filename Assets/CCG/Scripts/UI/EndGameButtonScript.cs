@@ -7,6 +7,10 @@ using Mirror;
 public class EndGameButtonScript : MonoBehaviour
 {
     public Text endGameText;
+    // get the background and change the color to green if winning
+    public Image backgroundImage;
+    public Color winColor;
+
     public void Start()
     {
         //int isPlayerWinner = PlayerPrefs.GetInt("isPlayerWinner", -1);
@@ -20,6 +24,8 @@ public class EndGameButtonScript : MonoBehaviour
         else if (winnerName == Player.localPlayer.username)
         {
             endGameText.text = "You Win!";
+            // Change the background color to green
+            backgroundImage.color = winColor;
         }
         else if (winnerName == Player.localPlayer.enemyInfo.username)
         {
