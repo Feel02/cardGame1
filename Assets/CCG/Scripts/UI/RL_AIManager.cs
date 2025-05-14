@@ -150,47 +150,220 @@ public class RL_AIManager : MonoBehaviour
         previousAction = null;
         float totalReward = 0;
 
-        while (true)
+        // --- Q-LEARNING ACTION SELECTION (ONLY BUY, END_TURN, PASS_BY) ---
+        bool qActionTakenThisLoop;
+        do
         {
+            qActionTakenThisLoop = false;
             List<string> possibleActions = GetPossibleActions();
             if (possibleActions.Count == 0)
             {
-                Debug.Log("No possible actions. Ending turn.");
-                break;
+                Debug.Log("No possible Q-actions.");
+                break; 
             }
 
             string chosenAction = ChooseAction(currentState, possibleActions);
-            previousAction = chosenAction;
-            Debug.Log("Executing action: " + chosenAction);
-            ExecuteAction(chosenAction);
+            
+            if (chosenAction.Contains("end_turn") || chosenAction.Contains("pass_by"))
+            {
+                Debug.Log("Q-Learning chose to end turn or pass by. Proceeding to greedy attack phase.");
+                break; // Exit Q-action loop, proceed to greedy attack phase
+            }
+            
+            previousAction = chosenAction; // Store action if not end_turn
+            Debug.Log("Executing Q-action: " + chosenAction);
+            ExecuteAction(chosenAction); // This might use a card, affecting 'usedCards'
             float reward = CalculateReward();
             totalReward += reward;
-
-            // Update Q-table only if not using the pre-trained version.
             UpdateQTable(previousState, previousAction, reward, currentState);
-
             previousState = currentState;
             currentState = GetState();
+            qActionTakenThisLoop = true;
 
-            if (chosenAction.Contains("end_turn"))
-            {
-                Debug.Log("End turn action executed. Ending turn.");
-                break;
-            }
+        } while (qActionTakenThisLoop && previousAction != null && !previousAction.Contains("end_turn") && !previousAction.Contains("pass_by"));
+
+        // --- ALWAYS PLAY ALL CARDS IN WALLET BEFORE ATTACKING ---
+        // Play as many cards from wallet as possible (until board is full or wallet is empty)
+        while (aiPlayer.deck.wallet.Count > 0 && aiPlayer.deck.playerField.Count < 6)
+        {
+            // Always play the first card in wallet
+            aiPlayer.deck.CmdPlayCard(aiPlayer.deck.wallet[0], 0);
         }
+
+        // --- GREEDY ATTACK PHASE ---
+        GreedyAttackPhase();
         EndTurn(totalReward);
     }
 
-    void AttackPlayer(int attackerIndex)
+    void GreedyAttackPhase()
     {
-        FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
-        if (attackerIndex < aiCreatures.Length)
+        FieldCard[] aiCreaturesAll = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
+        FieldCard[] oppCreaturesAll = GameObject.Find("PlayerFieldContent").GetComponentsInChildren<FieldCard>();
+        List<FieldCard> aiAttackers = aiCreaturesAll.Where(c => !usedCards.Contains(c.GetInstanceID())).ToList();
+        List<FieldCard> oppCreatures = oppCreaturesAll.ToList();
+
+        // One-shot check: if AI can win immediately, do so
+        int aiTotalAttack = aiAttackers.Sum(c => c.card.strength);
+        int enemyHealth = Player.localPlayer.health;
+        if (aiTotalAttack >= enemyHealth)
         {
-            FieldCard attacker = aiCreatures[attackerIndex];
+            foreach (var attacker in aiAttackers)
+                AttackPlayer(attacker);
+            return;
+        }
+
+        // Helper to recalc total attack
+        int GetTotalAttack(List<FieldCard> cards) => cards.Sum(c => c.card.strength);
+
+        while (aiAttackers.Count > 0 && oppCreatures.Count > 0)
+        {
+            int aiTotalAttackLoop = GetTotalAttack(aiAttackers);
+            int oppTotalAttack = GetTotalAttack(oppCreatures);
+
+            // If AI's total attack > opponent's, attack player with all remaining attackers
+            if (aiTotalAttackLoop > oppTotalAttack)
+            {
+                foreach (var attacker in aiAttackers)
+                {
+                    AttackPlayer(attacker);
+                }
+                return; // Stop trading, attack player only
+            }
+
+            // For each AI attacker, find the best kill (highest attack, lowest health)
+            FieldCard bestAttacker = null;
+            FieldCard bestTarget = null;
+            int bestTargetAttack = -1;
+            int bestTargetHealth = int.MaxValue;
+
+            foreach (var attacker in aiAttackers)
+            {
+                foreach (var target in oppCreatures)
+                {
+                    if (attacker.card.strength >= target.card.health)
+                    {
+                        // Prefer highest attack target, then lowest health
+                        if (target.card.strength > bestTargetAttack || (target.card.strength == bestTargetAttack && target.card.health < bestTargetHealth))
+                        {
+                            bestAttacker = attacker;
+                            bestTarget = target;
+                            bestTargetAttack = target.card.strength;
+                            bestTargetHealth = target.card.health;
+                        }
+                    }
+                }
+            }
+
+            if (bestAttacker != null && bestTarget != null)
+            {
+                AttackCreature(bestAttacker, bestTarget);
+                aiAttackers.Remove(bestAttacker);
+                oppCreatures.Remove(bestTarget);
+            }
+            else
+            {
+                break; // No more kills possible
+            }
+        }
+        // Attack player with any remaining attackers
+        foreach (var attacker in aiAttackers)
+        {
+            AttackPlayer(attacker);
+        }
+    }
+
+    private struct PotentialEngagement
+    {
+        public FieldCard Target;
+        public TradeOutcome Outcome;
+        public bool IsDangerous;
+        public int TargetStrength;
+    }
+
+    private int GetCustomOutcomeScore(TradeOutcome outcome, bool isTargetDangerous)
+    {
+        if (isTargetDangerous)
+        {
+            if (outcome == TradeOutcome.Best) return 4;
+            if (outcome == TradeOutcome.Good) return 3;
+            if (outcome == TradeOutcome.Okay) return 2;
+            if (outcome == TradeOutcome.Bad) return 1;
+        }
+        else // Not Dangerous
+        {
+            if (outcome == TradeOutcome.Best) return 4;
+            if (outcome == TradeOutcome.Good) return 3; // Still allow Good for non-dangerous if it's the top pick.
+                                                      // The selection logic will filter this if only Best is desired for non-dangerous.
+                                                      // The user case: AI 4/1 vs Player 1/1 (Good, NonDangerous) -> score 3.
+                                                      // Selection logic `if (scoreForBestChoice == 4)` filters this out.
+            if (outcome == TradeOutcome.Okay) return -1;
+            if (outcome == TradeOutcome.Bad) return -2;
+        }
+        return -99; // Should not be reached if all outcomes are covered
+    }
+
+    private enum TradeOutcome
+    {
+        Bad,        // Attacker dies, Target survives
+        Okay,       // Both survive OR Attacker survives, Target takes damage but survives
+        Good,       // Attacker dies, Target dies (mutual destruction)
+        Best        // Attacker survives, Target dies
+    }
+
+    private bool IsCardDangerous(FieldCard card)
+    {
+        return card.card.strength >= 3 || card.card.health >= 4 || (card.card.strength >= 3 && card.card.health >= 2);
+    }
+
+    private TradeOutcome CalculateTradeOutcome(FieldCard attacker, FieldCard target)
+    {
+        int attackerStrength = attacker.card.strength;
+        int attackerHealth = attacker.card.health; // Current health
+        int targetStrength = target.card.strength;
+        int targetHealth = target.card.health;   // Current health
+
+        bool attackerDies = targetStrength >= attackerHealth;
+        bool targetDies = attackerStrength >= targetHealth;
+
+        if (targetDies && !attackerDies) return TradeOutcome.Best;
+        if (targetDies && attackerDies) return TradeOutcome.Good;
+        // For "Okay", we consider if attacker survives, even if target doesn't die.
+        // Or if both survive.
+        if (!attackerDies) return TradeOutcome.Okay; // Attacker survives (target may or may not die, but not "Best")
+        // If attackerDies is true, and targetDies is false, it's Bad.
+        // This also covers the case where both survive but we already handled !attackerDies for Okay.
+        // So if we reach here, attackerDies must be true.
+        if (attackerDies && !targetDies) return TradeOutcome.Bad;
+        
+        return TradeOutcome.Okay; // Default for any other scenario, e.g. both survive (covered by !attackerDies)
+                                  // or if logic is somehow incomplete, err on side of not Bad.
+                                  // Re-evaluating "Okay": Attacker survives, target doesn't die OR both survive.
+                                  // If attackerDies is false, it is Okay or Best. Best is handled.
+                                  // So if !attackerDies, it's Okay.
+                                  // If attackerDies is true:
+                                  //  - if targetDies is true -> Good (handled)
+                                  //  - if targetDies is false -> Bad
+    }
+
+    void AttackPlayer(FieldCard attacker)
+    {
+        if (attacker != null)
+        {
             // Use networked command
             ((CreatureCard)attacker.card.data).Attack(attacker, Player.localPlayer);
             usedCards.Add(attacker.GetInstanceID()); // Mark the card as used
-            Debug.Log(attacker.GetInstanceID() + " has been used!");
+            Debug.Log(attacker.card.data.CardID + " (" + attacker.GetInstanceID() + ") attacked player.");
+        }
+    }
+
+    void AttackCreature(FieldCard attacker, FieldCard target)
+    {
+        if (attacker != null && target != null)
+        {
+            // Use networked command
+            ((CreatureCard)attacker.card.data).Attack(attacker, target);
+            usedCards.Add(attacker.GetInstanceID()); // Mark the card as used
+            Debug.Log(attacker.card.data.CardID + " (" + attacker.GetInstanceID() + ") attacked " + target.card.data.CardID + " (" + target.GetInstanceID() + ")");
         }
     }
 
@@ -234,6 +407,7 @@ public class RL_AIManager : MonoBehaviour
     {
         List<string> actions = new List<string>();
 
+        // Only allow Q-table to choose buy, end_turn, and pass_by
         if (aiPlayer.deck.wallet.Count < 6)
         {
             for (int i = 0; i < aiPlayer.deck.hand.Count; i++)
@@ -244,27 +418,8 @@ public class RL_AIManager : MonoBehaviour
                 }
             }
         }
-
-        for (int i = 0; i < aiPlayer.deck.wallet.Count; i++)
-        {
-            actions.Add($"('play', '{aiPlayer.deck.wallet[i].data.CardID}')");
-        }
-
-        FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
-        FieldCard[] playerCreatures = GameObject.Find("PlayerFieldContent").GetComponentsInChildren<FieldCard>();
-
-        for (int i = 0; i < aiCreatures.Length; i++)
-        {
-            if(usedCards.Contains(aiCreatures[i].GetInstanceID())) continue;
-            
-            actions.Add($"('attack_player', {i})");
-            for (int j = 0; j < playerCreatures.Length; j++)
-            {
-                actions.Add($"('attack_card', {i}, {j})");
-            }
-        }
-
         actions.Add("('end_turn',)");
+        actions.Add("('pass_by',)");
         return actions;
     }
     string ChooseAction(string state, List<string> actions)
@@ -301,6 +456,9 @@ public class RL_AIManager : MonoBehaviour
         string actionType = parts[0].Trim();
         Debug.Log("--------------------------------------");
 
+        FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
+        FieldCard[] playerCreatures = GameObject.Find("PlayerFieldContent").GetComponentsInChildren<FieldCard>();
+
         switch (actionType)
         {
             case "buy":
@@ -313,12 +471,26 @@ public class RL_AIManager : MonoBehaviour
                 break;
             case "attack_player":
                 int attackerIndexPlayer = int.Parse(parts[1].Trim());
-                AttackPlayer(attackerIndexPlayer);
+                if (attackerIndexPlayer < aiCreatures.Length)
+                {
+                    AttackPlayer(aiCreatures[attackerIndexPlayer]);
+                }
+                else
+                {
+                    Debug.LogWarning($"Attacker index {attackerIndexPlayer} out of bounds for AI creatures.");
+                }
                 break;
             case "attack_card":
                 int attackerIndexCard = int.Parse(parts[1].Trim());
                 int targetIndexCard = int.Parse(parts[2].Trim());
-                AttackCreature(attackerIndexCard, targetIndexCard);
+                if (attackerIndexCard < aiCreatures.Length && targetIndexCard < playerCreatures.Length)
+                {
+                    AttackCreature(aiCreatures[attackerIndexCard], playerCreatures[targetIndexCard]);
+                }
+                else
+                {
+                    Debug.LogWarning($"Attacker index {attackerIndexCard} or target index {targetIndexCard} out of bounds.");
+                }
                 break;
             case "end_turn":
                 // No action needed here; handled in AITurn.
@@ -351,21 +523,6 @@ public class RL_AIManager : MonoBehaviour
             }
         }
         return null; // Card not found
-    }
-
-    void AttackCreature(int attackerIndex, int targetIndex)
-    {
-        FieldCard[] aiCreatures = GameObject.Find("EnemyFieldContent").GetComponentsInChildren<FieldCard>();
-        FieldCard[] playerCreatures = GameObject.Find("PlayerFieldContent").GetComponentsInChildren<FieldCard>();
-
-        if (attackerIndex < aiCreatures.Length && targetIndex < playerCreatures.Length)
-        {
-            FieldCard attacker = aiCreatures[attackerIndex];
-            FieldCard target = playerCreatures[targetIndex];
-            // Use networked command
-            ((CreatureCard)attacker.card.data).Attack(attacker, target);
-            usedCards.Add(attacker.GetInstanceID()); // Mark the card as used
-        }
     }
 
     void BuyCard(string cardID)
