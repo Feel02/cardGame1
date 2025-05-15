@@ -234,69 +234,112 @@ public class RL_AIManager : MonoBehaviour
         List<FieldCard> aiAttackers = aiCreaturesAll.Where(c => !usedCards.Contains(c.GetInstanceID())).ToList();
         List<FieldCard> oppCreatures = oppCreaturesAll.ToList();
 
-        // One-shot check: if AI can win immediately, do so
-        int aiTotalAttack = aiAttackers.Sum(c => c.card.strength);
-        int enemyHealth = Player.localPlayer.health;
-        if (aiTotalAttack >= enemyHealth)
+        // First priority: Find and attack high-threat cards (3+ attack)
+        var highThreatTargets = oppCreatures.Where(c => c.card.strength >= 3).ToList();
+        
+        if (highThreatTargets.Count > 0)
         {
-            foreach (var attacker in aiAttackers)
-                AttackPlayer(attacker);
-            return;
-        }
-
-        // Helper to recalc total attack
-        int GetTotalAttack(List<FieldCard> cards) => cards.Sum(c => c.card.strength);
-
-        while (aiAttackers.Count > 0 && oppCreatures.Count > 0)
-        {
-            int aiTotalAttackLoop = GetTotalAttack(aiAttackers);
-            int oppTotalAttack = GetTotalAttack(oppCreatures);
-
-            // If AI's total attack > opponent's, attack player with all remaining attackers
-            if (aiTotalAttackLoop > oppTotalAttack)
+            // Sort high-threat targets by attack (highest first)
+            highThreatTargets = highThreatTargets.OrderByDescending(c => c.card.strength).ToList();
+            
+            foreach (var target in highThreatTargets)
             {
-                foreach (var attacker in aiAttackers)
+                // For each high-threat target, try to find attackers to take it down
+                var potentialAttackers = new List<FieldCard>();
+                int attackPower = 0;
+                
+                // Sort attackers by health/attack ratio to use weaker ones first
+                var sortedAttackers = aiAttackers.OrderBy(a => (float)a.card.health / a.card.strength).ToList();
+                
+                foreach (var attacker in sortedAttackers)
                 {
-                    AttackPlayer(attacker);
-                }
-                return; // Stop trading, attack player only
-            }
-
-            // For each AI attacker, find the best kill (highest attack, lowest health)
-            FieldCard bestAttacker = null;
-            FieldCard bestTarget = null;
-            int bestTargetAttack = -1;
-            int bestTargetHealth = int.MaxValue;
-
-            foreach (var attacker in aiAttackers)
-            {
-                foreach (var target in oppCreatures)
-                {
-                    if (attacker.card.strength >= target.card.health)
+                    potentialAttackers.Add(attacker);
+                    attackPower += attacker.card.strength;
+                    
+                    // If we have enough attack power to kill the target
+                    if (attackPower >= target.card.health)
                     {
-                        // Prefer highest attack target, then lowest health
-                        if (target.card.strength > bestTargetAttack || (target.card.strength == bestTargetAttack && target.card.health < bestTargetHealth))
+                        // Use all selected attackers against this target
+                        foreach (var selectedAttacker in potentialAttackers)
                         {
-                            bestAttacker = attacker;
-                            bestTarget = target;
-                            bestTargetAttack = target.card.strength;
-                            bestTargetHealth = target.card.health;
+                            AttackCreature(selectedAttacker, target);
+                            aiAttackers.Remove(selectedAttacker);
                         }
+                        oppCreatures.Remove(target);
+                        break;
                     }
                 }
             }
+        }
 
-            if (bestAttacker != null && bestTarget != null)
+        // If we still have attackers left after handling high-threat cards, continue with original logic
+        if (aiAttackers.Count > 0)
+        {
+            // One-shot check: if AI can win immediately, do so
+            int aiTotalAttack = aiAttackers.Sum(c => c.card.strength);
+            int enemyHealth = Player.localPlayer.health;
+            if (aiTotalAttack >= enemyHealth)
             {
-                AttackCreature(bestAttacker, bestTarget);
-                aiAttackers.Remove(bestAttacker);
-                oppCreatures.Remove(bestTarget);
+                foreach (var attacker in aiAttackers)
+                    AttackPlayer(attacker);
+                return;
             }
-            else
+
+            // Helper to recalc total attack
+            int GetTotalAttack(List<FieldCard> cards) => cards.Sum(c => c.card.strength);
+
+            while (aiAttackers.Count > 0 && oppCreatures.Count > 0)
             {
-                break; // No more kills possible
+                int aiTotalAttackLoop = GetTotalAttack(aiAttackers);
+                int oppTotalAttack = GetTotalAttack(oppCreatures);
+
+                // If AI's total attack > opponent's, attack player with all remaining attackers
+                if (aiTotalAttackLoop > oppTotalAttack)
+                {
+                    foreach (var attacker in aiAttackers)
+                    {
+                        AttackPlayer(attacker);
+                    }
+                    return; // Stop trading, attack player only
+                }
+
+                // For each AI attacker, find the best kill (highest attack, lowest health)
+                FieldCard bestAttacker = null;
+                FieldCard bestTarget = null;
+                int bestTargetAttack = -1;
+                int bestTargetHealth = int.MaxValue;
+
+                foreach (var attacker in aiAttackers)
+                {
+                    foreach (var target in oppCreatures)
+                    {
+                        if (attacker.card.strength >= target.card.health)
+                        {
+                            // Prefer highest attack target, then lowest health
+                            if (target.card.strength > bestTargetAttack || (target.card.strength == bestTargetAttack && target.card.health < bestTargetHealth))
+                            {
+                                bestAttacker = attacker;
+                                bestTarget = target;
+                                bestTargetAttack = target.card.strength;
+                                bestTargetHealth = target.card.health;
+                            }
+                        }
+                    }
+                }
+
+                if (bestAttacker != null && bestTarget != null)
+                {
+                    AttackCreature(bestAttacker, bestTarget);
+                    aiAttackers.Remove(bestAttacker);
+                    oppCreatures.Remove(bestTarget);
+                }
+                else
+                {
+                    break; // No more kills possible
+                }
             }
         }
+        
         // Attack player with any remaining attackers
         foreach (var attacker in aiAttackers)
         {
