@@ -10,6 +10,20 @@ public class OfflineStartGameButtonScript : MonoBehaviour
 
     public void Start()
     {
+        // Only disable and gray out the offline button on Android devices at runtime
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            if (offlineButton != null)
+            {
+                offlineButton.interactable = false;
+                ColorBlock colors = offlineButton.colors;
+                colors.normalColor = colors.disabledColor;
+                colors.highlightedColor = colors.disabledColor;
+                colors.pressedColor = colors.disabledColor;
+                colors.selectedColor = colors.disabledColor;
+                offlineButton.colors = colors;
+            }
+        }
         if (PlayerPrefs.GetString("Name") != null)
             username.text = PlayerPrefs.GetString("Name");
     }
