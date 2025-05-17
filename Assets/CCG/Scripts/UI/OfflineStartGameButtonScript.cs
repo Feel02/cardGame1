@@ -6,10 +6,25 @@ public class OfflineStartGameButtonScript : MonoBehaviour
 {
     public TMP_InputField username;
     public GameObject aiSelectionPanel; // Reference to new AI selection panel
+    public Button offlineButton; // Reference to the offline button
 
     public void Start()
     {
-        if (PlayerPrefs.GetString("Name") != null) 
+        // Only disable and gray out the offline button on Android devices at runtime
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            if (offlineButton != null)
+            {
+                offlineButton.interactable = false;
+                ColorBlock colors = offlineButton.colors;
+                colors.normalColor = colors.disabledColor;
+                colors.highlightedColor = colors.disabledColor;
+                colors.pressedColor = colors.disabledColor;
+                colors.selectedColor = colors.disabledColor;
+                offlineButton.colors = colors;
+            }
+        }
+        if (PlayerPrefs.GetString("Name") != null)
             username.text = PlayerPrefs.GetString("Name");
     }
 
@@ -20,6 +35,7 @@ public class OfflineStartGameButtonScript : MonoBehaviour
             username.text = "Player";
         }
         PlayerPrefs.SetString("Name", username.text);
+        offlineButton.gameObject.SetActive(false); // Hide the offline button
         aiSelectionPanel.SetActive(true); // Show AI selection
     }
 

@@ -76,4 +76,29 @@ public class NetworkManagerCCG : NetworkManager
         return localIP;
     }
     #endif
+
+    // Add this method to allow restarting the server after a game ends
+    public void RestartServer()
+    {
+        StartCoroutine(RestartServerCoroutine());
+    }
+
+    private IEnumerator RestartServerCoroutine()
+    {
+        Debug.Log("[NetworkManagerCCG] Restarting server...");
+        if (NetworkServer.active && NetworkClient.isConnected)
+        {
+            // Host mode (server + local client)
+            StopHost();
+            yield return new WaitForSeconds(1.0f);
+            StartHost();
+        }
+        else if (NetworkServer.active)
+        {
+            // Dedicated server mode
+            StopServer();
+            yield return new WaitForSeconds(1.0f);
+            StartServer();
+        }
+    }
 }

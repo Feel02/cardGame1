@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 992a434fee04c2f47bebd224e2fb0dee, type: 3}
+  m_Name: 19-cc-1
+  m_EditorClassIdentifier: 
+  id: 88162e568b68b3689c30ad84dba25faf
+  image: {fileID: 21300000, guid: 68f3ef5f3c2b74842ad51ff4ebdad446, type: 3}
+  cost: 5
+  category: 
+  cardName: Cellula cancerosa
+  intiatives: []
+  hasInitiative: 0
+  description: A damaged body cell that grows and divides uncontrollably, forming
+    tumors and sometimes spreading to other parts of the body.
+  strength: 5
+  health: 4
+  acceptableTargets: 0301
+  creatureType: 
+  hasCharge: 0
+  hasTaunt: 0
+  amount: 1
+  deathcrys: []
+  hasDeathCry: 0
+  cardPrefab: {fileID: 3966246863333951121, guid: 66532acc9bfbbe043b5ef65a717193da, type: 3}

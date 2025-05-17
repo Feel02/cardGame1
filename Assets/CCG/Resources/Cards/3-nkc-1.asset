@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 992a434fee04c2f47bebd224e2fb0dee, type: 3}
+  m_Name: 3-nkc-1
+  m_EditorClassIdentifier: 
+  id: 047aaaf95092a4ea49fae8be82a26576
+  image: {fileID: 21300000, guid: 785665b506e35a747b085181540f383a, type: 3}
+  cost: 2
+  category: 
+  cardName: Innate Lymphocytes
+  intiatives: []
+  hasInitiative: 0
+  description: A white blood cell that destroys virus-infected and cancerous cells.
+  strength: 2
+  health: 2
+  acceptableTargets: 0301
+  creatureType: 
+  hasCharge: 0
+  hasTaunt: 0
+  amount: 1
+  deathcrys: []
+  hasDeathCry: 0
+  cardPrefab: {fileID: 3966246863333951121, guid: 66532acc9bfbbe043b5ef65a717193da, type: 3}

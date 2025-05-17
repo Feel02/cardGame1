@@ -17,6 +17,6 @@ public class AISelectionPanel : MonoBehaviour
     private void OnAISelected(bool useRLAgent)
     {
         offlineStart.StartGame(useRLAgent);
-        gameObject.SetActive(false);
+        //gameObject.SetActive(false);
     }
 }

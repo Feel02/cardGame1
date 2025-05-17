@@ -7,6 +7,10 @@ using Mirror;
 public class EndGameButtonScript : MonoBehaviour
 {
     public Text endGameText;
+    // get the background and change the color to green if winning
+    public Image backgroundImage;
+    public Color winColor;
+
     public void Start()
     {
         //int isPlayerWinner = PlayerPrefs.GetInt("isPlayerWinner", -1);
@@ -20,6 +24,8 @@ public class EndGameButtonScript : MonoBehaviour
         else if (winnerName == Player.localPlayer.username)
         {
             endGameText.text = "You Win!";
+            // Change the background color to green
+            backgroundImage.color = winColor;
         }
         else if (winnerName == Player.localPlayer.enemyInfo.username)
         {
@@ -33,6 +39,24 @@ public class EndGameButtonScript : MonoBehaviour
 
     public void EndGame()
     {
+        // Stop the network host/server/client if running
+        if (NetworkManager.singleton != null)
+        {
+            if (NetworkServer.active && NetworkClient.isConnected)
+            {
+                NetworkManager.singleton.StopHost();
+            }
+            else if (NetworkServer.active)
+            {
+                NetworkManager.singleton.StopServer();
+            }
+            else if (NetworkClient.isConnected)
+            {
+                NetworkManager.singleton.StopClient();
+            }
+            // Destroy the NetworkManager GameObject to ensure a clean state
+            Destroy(NetworkManager.singleton.gameObject);
+        }
         UnityEngine.SceneManagement.SceneManager.LoadScene(0, UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 }

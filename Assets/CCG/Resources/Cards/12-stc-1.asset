@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 992a434fee04c2f47bebd224e2fb0dee, type: 3}
+  m_Name: 12-stc-1
+  m_EditorClassIdentifier: 
+  id: b9353846d496e0d714abb3d25d91fd61
+  image: {fileID: 21300000, guid: bc34bdd09d609c043b7821cbd1b1bdc3, type: 3}
+  cost: 2
+  category: 
+  cardName: Staphylococcus aureus
+  intiatives: []
+  hasInitiative: 0
+  description: Round bacteria that grow in your skin or in your nose. Can cause infections
+    such as pimples, boils, etc. they enter your body.
+  strength: 2
+  health: 2
+  acceptableTargets: 0301
+  creatureType: 
+  hasCharge: 0
+  hasTaunt: 0
+  amount: 1
+  deathcrys: []
+  hasDeathCry: 0
+  cardPrefab: {fileID: 3966246863333951121, guid: 66532acc9bfbbe043b5ef65a717193da, type: 3}

@@ -49,10 +49,26 @@ public class Player : Entity
         hasEnemy = true;
 
         bool useRLAgent = PlayerPrefs.GetInt("UseRLAgent", 0) == 1;
-
+        
+        // Create/get a waiting screen for AI initialization
+        WaitingScreen waitingScreen = null;
+        
         if (useRLAgent)
         {
+            // Try to find the waiting screen or create it
+            waitingScreen = WaitingScreen.Instance;
+            if (waitingScreen == null)
+            {
+                waitingScreen = WaitingScreenSetup.EnsureWaitingScreenExists();
+            }
+            
+            if (waitingScreen != null)
+            {
+                waitingScreen.ShowWithMessage("INITIALIZING RL AI");
+            }
+            
             gameObject.AddComponent<RL_AIManager>();
+            // The RL_AIManager will handle hiding the screen after loading
         }
         else
         {
